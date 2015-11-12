@@ -18,7 +18,7 @@ public class GuiceServletConfig extends GuiceServletContextListener {
                     protected void configureServlets() {
                         install(new JerseyClientModule());
 
-//                        bind(RestEndpoint.class);
+                        bind(RestEndpoint.class);
 
                         serve("/*").with(GuiceContainer.class);
                     }
