@@ -9,3 +9,11 @@ from `http://localhost:8080/`
 
 ### Run Test Case Files
 **TODO:** once we start making test files/scripts, we will need to update this to include instruction on how to run.
+
+### Libraries Used
+* [Jersey](https://jersey.java.net/) for building RESTful services
+* [Jackson](http://wiki.fasterxml.com/JacksonHome) for serializing and deserializing JSON
+* [Guava](https://github.com/google/guava/wiki) for general Java programming
+* [slf4j](http://www.slf4j.org/) for logging. TODO enable loggin
+* [Guice](https://github.com/google/guice/wiki/Motivation) for dependency injection and servlet configuration. This
+*should* be fairly invisible for 99% of the development
