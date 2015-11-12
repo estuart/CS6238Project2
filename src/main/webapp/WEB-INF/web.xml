@@ -1,0 +1,28 @@
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
+         version="2.4">
+
+    <display-name>S2DR</display-name>
+
+    <filter>
+        <filter-name>guiceFilter</filter-name>
+        <filter-class>com.google.inject.servlet.GuiceFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>guiceFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <context-param>
+        <description>The path to the logging configuration file.</description>
+        <param-name>logging.configuration.file</param-name>
+        <param-value>/WEB-INF/classes/logback.xml</param-value>
+    </context-param>
+
+    <listener>
+        <listener-class>com.cs6238.project2.s2dr.guice.GuiceServletConfig</listener-class>
+    </listener>
+
+</web-app>
