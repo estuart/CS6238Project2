@@ -1,4 +1,4 @@
-package com.cs6238.project2.s2dr.guice;
+package com.cs6238.project2.s2dr.server.guice;
 
 import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.google.inject.AbstractModule;

@@ -1,6 +1,6 @@
-package com.cs6238.project2.s2dr.web;
+package com.cs6238.project2.s2dr.server.web;
 
-import com.cs6238.project2.s2dr.services.SystemService;
+import com.cs6238.project2.s2dr.server.services.SystemService;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;

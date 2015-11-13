@@ -22,7 +22,7 @@
     </context-param>
 
     <listener>
-        <listener-class>com.cs6238.project2.s2dr.guice.GuiceServletConfig</listener-class>
+        <listener-class>com.cs6238.project2.s2dr.server.guice.GuiceServletConfig</listener-class>
     </listener>
 
 </web-app>

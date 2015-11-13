@@ -1,4 +1,4 @@
-package com.cs6238.project2.s2dr.services;
+package com.cs6238.project2.s2dr.server.services;
 
 import com.google.common.collect.ImmutableMap;
 

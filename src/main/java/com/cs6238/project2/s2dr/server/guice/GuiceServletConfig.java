@@ -1,6 +1,6 @@
-package com.cs6238.project2.s2dr.guice;
+package com.cs6238.project2.s2dr.server.guice;
 
-import com.cs6238.project2.s2dr.web.RestEndpoint;
+import com.cs6238.project2.s2dr.server.web.RestEndpoint;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;

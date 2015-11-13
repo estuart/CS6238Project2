@@ -1,4 +1,4 @@
-package com.cs6238.project2.s2dr.guice;
+package com.cs6238.project2.s2dr.server.guice;
 
 import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
 
