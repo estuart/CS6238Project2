@@ -16,6 +16,7 @@ public class GuiceServletConfig extends GuiceServletContextListener {
                 new JerseyServletModule() {
                     @Override
                     protected void configureServlets() {
+                        install(new DatabaseModule());
                         install(new JerseyClientModule());
 
                         bind(RestEndpoint.class);

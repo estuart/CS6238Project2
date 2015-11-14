@@ -17,3 +17,4 @@ from `http://localhost:8080/`
 * [slf4j](http://www.slf4j.org/) for logging. TODO enable loggin
 * [Guice](https://github.com/google/guice/wiki/Motivation) for dependency injection and servlet configuration. This
 *should* be fairly invisible for 99% of the development
+* [JDBC](https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html) for database interaction
