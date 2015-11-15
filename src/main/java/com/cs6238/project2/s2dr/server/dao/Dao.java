@@ -1,5 +1,6 @@
 package com.cs6238.project2.s2dr.server.dao;
 
+import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 
 import javax.inject.Inject;
@@ -75,7 +76,7 @@ public class Dao {
         }
     }
 
-    public DocumentDownload downloadDocument(int documentId) throws SQLException {
+    public DocumentDownload downloadDocument(int documentId) throws SQLException, DocumentNotFoundException {
         String query =
                 "SELECT *" +
                 "  FROM s2dr.Documents" +
@@ -89,7 +90,10 @@ public class Dao {
 
             ResultSet rs = ps.executeQuery();
 
-            rs.next();
+            if (!rs.next()) {
+                // no documents matched the given documentId
+                throw new DocumentNotFoundException();
+            }
 
             return DocumentDownload.builder()
                     .setDocumentId(rs.getInt("documentId"))
@@ -97,6 +101,25 @@ public class Dao {
                     .setContents(rs.getClob("contents").getAsciiStream())
                     .build();
 
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
+
+    public void deleteDocument(int documentId) throws SQLException {
+        String query =
+                "DELETE" +
+                "  FROM s2dr.Documents" +
+                " WHERE documentId = ?";
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(query);
+            ps.setInt(1, documentId);
+
+            ps.executeUpdate();
         } finally {
             if (ps != null) {
                 ps.close();
