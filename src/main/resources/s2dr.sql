@@ -10,11 +10,20 @@ CREATE SCHEMA s2dr;
 -- Table that will hold "Users" of the system
 CREATE TABLE s2dr.Users
 (
-  userId INT NOT NULL,
+  userId INT NOT NULL AUTO_INCREMENT,
   firstName VARCHAR (255) NOT NULL,
   lastName VARCHAR (255) NOT NULL,
   PRIMARY KEY (userId)
 );
 
-INSERT INTO s2dr.Users VALUES (1234, 'Michael', 'Puckett');
+INSERT INTO s2dr.Users (firstName, lastName) VALUES ('Michael', 'Puckett');
+INSERT INTO s2dr.Users (firstName, lastName) VALUES ('Evan', 'Stuart');
+
+CREATE TABLE s2dr.Documents
+(
+  documentId INT NOT NULL AUTO_INCREMENT,
+  documentName VARCHAR (255) NOT NULL,
+  contents CLOB NOT NULL,
+  PRIMARY KEY (documentId)
+);
 
