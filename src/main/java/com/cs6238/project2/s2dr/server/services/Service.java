@@ -1,6 +1,7 @@
 package com.cs6238.project2.s2dr.server.services;
 
 import com.cs6238.project2.s2dr.server.dao.Dao;
+import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 import com.google.common.collect.ImmutableMap;
 
@@ -35,7 +36,11 @@ public class Service {
         return dao.uploadDocument(document, documentName);
     }
 
-    public DocumentDownload downloadDocument(int documentId) throws SQLException {
+    public DocumentDownload downloadDocument(int documentId) throws SQLException, DocumentNotFoundException {
         return dao.downloadDocument(documentId);
+    }
+
+    public void deleteDocument(int documentId) throws SQLException {
+        dao.deleteDocument(documentId);
     }
 }
