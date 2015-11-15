@@ -1,6 +1,6 @@
 package com.cs6238.project2.s2dr.server.guice;
 
-import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
