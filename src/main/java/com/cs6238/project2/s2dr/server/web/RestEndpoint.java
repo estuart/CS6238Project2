@@ -2,6 +2,7 @@ package com.cs6238.project2.s2dr.server.web;
 
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
+import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.services.Service;
 import com.sun.jersey.core.header.ContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
@@ -11,6 +12,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -70,7 +72,7 @@ public class RestEndpoint {
     @GET
     @Path("/document/{documentId}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public Response downloadDocument(@PathParam("documentId") Integer documentId) throws SQLException {
+    public Response downloadDocument(@PathParam("documentId") int documentId) throws SQLException {
         DocumentDownload download;
         try {
             download = service.downloadDocument(documentId);
@@ -90,6 +92,19 @@ public class RestEndpoint {
                 .ok(download.getContents())
                 .header("Content-Disposition", contentDisposition)
                 .build();
+    }
+
+    @PUT
+    @Path("/document/{documentId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response delegate(@PathParam("documentId") int documentId,
+                             DelegatePermissionParams delegateParams) throws SQLException {
+
+        service.delegatePermissions(documentId, delegateParams);
+
+        // return 200
+        return Response.ok().build();
     }
 
     @DELETE

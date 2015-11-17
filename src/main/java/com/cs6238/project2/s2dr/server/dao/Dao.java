@@ -1,6 +1,7 @@
 package com.cs6238.project2.s2dr.server.dao;
 
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 
 import javax.inject.Inject;
@@ -100,6 +101,30 @@ public class Dao {
                     .setDocumentName(rs.getString("documentName"))
                     .setContents(rs.getClob("contents").getAsciiStream())
                     .build();
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
+
+    public void delegatePermissions(int documentId, DelegatePermissionParams delegateParams) throws SQLException {
+        String query =
+                "INSERT INTO s2dr.DocumentPermissions" +
+                "            (documentId, clientId, permission, canPropogate)" +
+                "     VALUES (?, ?, ?, ?)";
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(query);
+
+            ps.setInt(1, documentId);
+            ps.setString(2, delegateParams.getClientId());
+            ps.setString(3, delegateParams.getPermission().toString());
+            ps.setBoolean(4, delegateParams.getCanPropogate());
+
+            ps.executeUpdate();
 
         } finally {
             if (ps != null) {
