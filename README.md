@@ -1,11 +1,13 @@
 # Project 2 - S2DR
 
 ### System Requirements
-* [Gradle](http://gradle.org/) must be installed on the system that will run the S2DR servlet
+* JAVA must be installed on the system (jdk 1.8)
 
 ### Build/Run
-To build and run the Java servlet, from the project root run `gradle appRun`. That's it! The servlet is now accessible
-from `http://localhost:8080/`
+To build and run the Java servlet, from the project root run `./gradlew appRun`. That's it!
+[The Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) will automatically download a
+project-local Gradle if you don't already have it installed on your system The servlet is now accessible from
+`http://localhost:8080/`
 
 ### Run Test Case Files
 **TODO:** once we start making test files/scripts, we will need to update this to include instruction on how to run.
