@@ -6,7 +6,7 @@
 ### Build/Run
 To build and run the Java servlet, from the project root run `./gradlew appRun`. That's it!
 [The Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) will automatically download a
-project-local Gradle if you don't already have it installed on your system The servlet is now accessible from
+project-local Gradle if you don't already have it installed on your system. The servlet is now accessible from
 `http://localhost:8080/`
 
 ### Run Test Case Files

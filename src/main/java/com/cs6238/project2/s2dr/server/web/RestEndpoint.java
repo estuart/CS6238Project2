@@ -6,6 +6,8 @@ import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.services.Service;
 import com.sun.jersey.core.header.ContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -30,7 +32,7 @@ import java.util.Optional;
 @Path("s2dr")
 public class RestEndpoint {
 
-    // TODO enable logging using slf4j
+    public static final Logger LOG = LoggerFactory.getLogger(RestEndpoint.class);
 
     private final Service service;
 
@@ -42,6 +44,7 @@ public class RestEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> helloWorld() throws SQLException {
+        LOG.info("Hello World");
         return service.getHelloMessage(Optional.<Integer>empty());
     }
 
@@ -49,6 +52,7 @@ public class RestEndpoint {
     @Path("/personal")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> helloName(@QueryParam("userId") Integer userId) throws SQLException {
+        LOG.info("Getting personal hello message for userId: {}", userId);
         return service.getHelloMessage(Optional.ofNullable(userId));
     }
 
@@ -61,8 +65,11 @@ public class RestEndpoint {
             @FormDataParam("documentName") String documentName)
             throws SQLException, FileNotFoundException, URISyntaxException {
 
+        LOG.info("Uploading new document named: {}", documentName);
+
         int newDocumentId = service.uploadDocument(document, documentName);
 
+        LOG.info("Successfully uploaded document with ID: {}", newDocumentId);
         // return HTTP 201 with URI to the created resource
         return Response
                 .created(new URI("/document/" + newDocumentId))
@@ -73,6 +80,8 @@ public class RestEndpoint {
     @Path("/document/{documentId}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response downloadDocument(@PathParam("documentId") int documentId) throws SQLException {
+        LOG.info("Downloading document: {}", documentId);
+
         DocumentDownload download;
         try {
             download = service.downloadDocument(documentId);
@@ -101,6 +110,8 @@ public class RestEndpoint {
     public Response delegate(@PathParam("documentId") int documentId,
                              DelegatePermissionParams delegateParams) throws SQLException {
 
+        LOG.info("Delegating permissions: {}, for document: {}", delegateParams, documentId);
+
         service.delegatePermissions(documentId, delegateParams);
 
         // return 200
@@ -111,6 +122,7 @@ public class RestEndpoint {
     @Path("/document/{documentId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteDocument(@PathParam("documentId") int documentId) throws SQLException{
+        LOG.info("Deleting document: {}", documentId);
         service.deleteDocument(documentId);
 
         // return 200
