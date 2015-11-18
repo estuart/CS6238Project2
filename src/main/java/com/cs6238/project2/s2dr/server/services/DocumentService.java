@@ -1,10 +1,12 @@
 package com.cs6238.project2.s2dr.server.services;
 
-import com.cs6238.project2.s2dr.server.dao.Dao;
+import com.cs6238.project2.s2dr.server.dao.DocumentDao;
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -13,13 +15,15 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
 
-public class Service {
+public class DocumentService {
 
-    private final Dao dao;
+    private static final Logger LOG = LoggerFactory.getLogger(DocumentService.class);
+
+    private final DocumentDao documentDao;
 
     @Inject
-    public Service(Dao dao) {
-        this.dao = dao;
+    public DocumentService(DocumentDao documentDao) {
+        this.documentDao = documentDao;
     }
 
     public Map<String, String> getHelloMessage(Optional<Integer> userId) throws SQLException {
@@ -27,25 +31,25 @@ public class Service {
         if (!userId.isPresent()) {
             name = "World";
         } else {
-            name = dao.getUserName(userId.get());
+            name = documentDao.getUserName(userId.get());
         }
         String message = "Hello " + name + "!";
         return ImmutableMap.of("message", message);
     }
 
     public int uploadDocument(File document, String documentName) throws SQLException, FileNotFoundException {
-        return dao.uploadDocument(document, documentName);
+        return documentDao.uploadDocument(document, documentName);
     }
 
     public DocumentDownload downloadDocument(int documentId) throws SQLException, DocumentNotFoundException {
-        return dao.downloadDocument(documentId);
+        return documentDao.downloadDocument(documentId);
     }
 
     public void delegatePermissions(int documentId, DelegatePermissionParams delegateParams) throws SQLException {
-        dao.delegatePermissions(documentId, delegateParams);
+        documentDao.delegatePermissions(documentId, delegateParams);
     }
 
     public void deleteDocument(int documentId) throws SQLException {
-        dao.deleteDocument(documentId);
+        documentDao.deleteDocument(documentId);
     }
 }

@@ -3,6 +3,8 @@ package com.cs6238.project2.s2dr.server.dao;
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -13,12 +15,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class Dao {
+public class DocumentDao {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DocumentDao.class);
 
     private final Connection conn;
 
     @Inject
-    public Dao(Connection conn) {
+    public DocumentDao(Connection conn) {
         this.conn = conn;
     }
 

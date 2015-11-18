@@ -1,11 +1,11 @@
 package com.cs6238.project2.s2dr.server.web;
 
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
-import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
-import com.cs6238.project2.s2dr.server.services.Service;
-import com.sun.jersey.core.header.ContentDisposition;
-import com.sun.jersey.multipart.FormDataParam;
+import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
+import com.cs6238.project2.s2dr.server.services.DocumentService;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,20 +32,20 @@ import java.util.Optional;
 @Path("s2dr")
 public class RestEndpoint {
 
-    public static final Logger LOG = LoggerFactory.getLogger(RestEndpoint.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RestEndpoint.class);
 
-    private final Service service;
+    private final DocumentService documentService;
 
     @Inject
-    RestEndpoint(Service service) {
-        this.service = service;
+    RestEndpoint(DocumentService documentService) {
+        this.documentService = documentService;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> helloWorld() throws SQLException {
         LOG.info("Hello World");
-        return service.getHelloMessage(Optional.<Integer>empty());
+        return documentService.getHelloMessage(Optional.<Integer>empty());
     }
 
     @GET
@@ -53,7 +53,7 @@ public class RestEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> helloName(@QueryParam("userId") Integer userId) throws SQLException {
         LOG.info("Getting personal hello message for userId: {}", userId);
-        return service.getHelloMessage(Optional.ofNullable(userId));
+        return documentService.getHelloMessage(Optional.ofNullable(userId));
     }
 
     @POST
@@ -67,7 +67,7 @@ public class RestEndpoint {
 
         LOG.info("Uploading new document named: {}", documentName);
 
-        int newDocumentId = service.uploadDocument(document, documentName);
+        int newDocumentId = documentService.uploadDocument(document, documentName);
 
         LOG.info("Successfully uploaded document with ID: {}", newDocumentId);
         // return HTTP 201 with URI to the created resource
@@ -84,7 +84,7 @@ public class RestEndpoint {
 
         DocumentDownload download;
         try {
-            download = service.downloadDocument(documentId);
+            download = documentService.downloadDocument(documentId);
         } catch (DocumentNotFoundException e) {
             // return a 404
             return Response
@@ -112,7 +112,7 @@ public class RestEndpoint {
 
         LOG.info("Delegating permissions: {}, for document: {}", delegateParams, documentId);
 
-        service.delegatePermissions(documentId, delegateParams);
+        documentService.delegatePermissions(documentId, delegateParams);
 
         // return 200
         return Response.ok().build();
@@ -123,7 +123,7 @@ public class RestEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteDocument(@PathParam("documentId") int documentId) throws SQLException{
         LOG.info("Deleting document: {}", documentId);
-        service.deleteDocument(documentId);
+        documentService.deleteDocument(documentId);
 
         // return 200
         return Response.ok().build();
