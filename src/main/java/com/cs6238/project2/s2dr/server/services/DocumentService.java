@@ -2,6 +2,7 @@ package com.cs6238.project2.s2dr.server.services;
 
 import com.cs6238.project2.s2dr.server.dao.DocumentDao;
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 import com.google.common.collect.ImmutableMap;
@@ -26,7 +27,9 @@ public class DocumentService {
         this.documentDao = documentDao;
     }
 
-    public Map<String, String> getHelloMessage(Optional<Integer> userId) throws SQLException {
+    public Map<String, String> getHelloMessage(Optional<Integer> userId)
+            throws SQLException, UnexpectedQueryResultsException {
+
         String name;
         if (!userId.isPresent()) {
             name = "World";
@@ -37,11 +40,15 @@ public class DocumentService {
         return ImmutableMap.of("message", message);
     }
 
-    public int uploadDocument(File document, String documentName) throws SQLException, FileNotFoundException {
+    public int uploadDocument(File document, String documentName)
+            throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
+
         return documentDao.uploadDocument(document, documentName);
     }
 
-    public DocumentDownload downloadDocument(int documentId) throws SQLException, DocumentNotFoundException {
+    public DocumentDownload downloadDocument(int documentId)
+            throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException {
+
         return documentDao.downloadDocument(documentId);
     }
 

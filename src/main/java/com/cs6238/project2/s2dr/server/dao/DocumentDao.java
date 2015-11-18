@@ -1,6 +1,9 @@
 package com.cs6238.project2.s2dr.server.dao;
 
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.exceptions.NoQueryResultsException;
+import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
+import com.cs6238.project2.s2dr.server.exceptions.TooManyQueryResultsException;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 import org.slf4j.Logger;
@@ -26,7 +29,7 @@ public class DocumentDao {
         this.conn = conn;
     }
 
-    public String getUserName(int userId) throws SQLException {
+    public String getUserName(int userId) throws SQLException, UnexpectedQueryResultsException {
         String query =
                 "SELECT *" +
                 "  FROM s2dr.Users" +
@@ -41,10 +44,20 @@ public class DocumentDao {
 
             String firstName, lastName;
 
-            rs.next();
+            if (!rs.next()) {
+                // no results were found when we were expecting one
+                throw new NoQueryResultsException(
+                        String.format("Was expecting at least one result from query: %s", query));
+            }
 
             firstName = rs.getString("firstName");
             lastName = rs.getString("lastName");
+
+            if (rs.next()) {
+                // multiple results were returned when we only expected one
+                throw new TooManyQueryResultsException(
+                        String.format("Was expecting only a single result from query: %s", query));
+            }
 
             return firstName + " " + lastName;
         } finally {
@@ -54,7 +67,8 @@ public class DocumentDao {
         }
     }
 
-    public int uploadDocument(File document, String documentName) throws SQLException, FileNotFoundException {
+    public int uploadDocument(File document, String documentName)
+            throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
         String query =
                 "INSERT INTO s2dr.Documents (documentName, contents)" +
                 "     VALUES (?, ?)";
@@ -70,9 +84,21 @@ public class DocumentDao {
 
             ResultSet rs = ps.getGeneratedKeys();
 
-            rs.next();
+            if (!rs.next()) {
+                // no results were found when we were expecting one
+                throw new NoQueryResultsException(
+                        String.format("Was expecting at least one result from query: %s", query));
+            }
 
-            return rs.getInt(1);
+            int newDocumentId = rs.getInt(1);
+
+            if (rs.next()) {
+                // multiple results were returned when we only expected one
+                throw new TooManyQueryResultsException(
+                        String.format("Was expecting only a single result from query: %s", query));
+            }
+
+            return newDocumentId;
 
         } finally {
             if (ps != null) {
@@ -81,7 +107,8 @@ public class DocumentDao {
         }
     }
 
-    public DocumentDownload downloadDocument(int documentId) throws SQLException, DocumentNotFoundException {
+    public DocumentDownload downloadDocument(int documentId)
+            throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException {
         String query =
                 "SELECT *" +
                 "  FROM s2dr.Documents" +
@@ -100,11 +127,19 @@ public class DocumentDao {
                 throw new DocumentNotFoundException();
             }
 
-            return DocumentDownload.builder()
+            DocumentDownload download = DocumentDownload.builder()
                     .setDocumentId(rs.getInt("documentId"))
                     .setDocumentName(rs.getString("documentName"))
                     .setContents(rs.getClob("contents").getAsciiStream())
                     .build();
+
+            if (rs.next()) {
+                // multiple results were returned when we only expected one
+                throw new TooManyQueryResultsException(
+                        String.format("Was expecting only a single result from query: %s", query));
+            }
+
+            return download;
 
         } finally {
             if (ps != null) {

@@ -1,6 +1,7 @@
 package com.cs6238.project2.s2dr.server.web;
 
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 import com.cs6238.project2.s2dr.server.services.DocumentService;
@@ -43,7 +44,8 @@ public class RestEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> helloWorld() throws SQLException {
+    public Map<String, String> helloWorld() throws SQLException, UnexpectedQueryResultsException {
+
         LOG.info("Hello World");
         return documentService.getHelloMessage(Optional.<Integer>empty());
     }
@@ -51,7 +53,9 @@ public class RestEndpoint {
     @GET
     @Path("/personal")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> helloName(@QueryParam("userId") Integer userId) throws SQLException {
+    public Map<String, String> helloName(@QueryParam("userId") Integer userId)
+            throws SQLException, UnexpectedQueryResultsException {
+
         LOG.info("Getting personal hello message for userId: {}", userId);
         return documentService.getHelloMessage(Optional.ofNullable(userId));
     }
@@ -63,7 +67,7 @@ public class RestEndpoint {
     public Response uploadDocument(
             @FormDataParam("document") File document,
             @FormDataParam("documentName") String documentName)
-            throws SQLException, FileNotFoundException, URISyntaxException {
+            throws SQLException, FileNotFoundException, URISyntaxException, UnexpectedQueryResultsException {
 
         LOG.info("Uploading new document named: {}", documentName);
 
@@ -79,7 +83,9 @@ public class RestEndpoint {
     @GET
     @Path("/document/{documentId}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public Response downloadDocument(@PathParam("documentId") int documentId) throws SQLException {
+    public Response downloadDocument(@PathParam("documentId") int documentId)
+            throws SQLException, UnexpectedQueryResultsException {
+        
         LOG.info("Downloading document: {}", documentId);
 
         DocumentDownload download;
