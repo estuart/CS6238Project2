@@ -67,11 +67,11 @@ public class DocumentDao {
         }
     }
 
-    public int uploadDocument(File document, String documentName)
+    public int uploadDocument(File document, String documentName, String securityFlag)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
         String query =
-                "INSERT INTO s2dr.Documents (documentName, contents)" +
-                "     VALUES (?, ?)";
+                "INSERT INTO s2dr.Documents (documentName, contents, securityFlag)" +
+                "     VALUES (?, ?, ?)";
 
         PreparedStatement ps = null;
         try {
@@ -79,6 +79,7 @@ public class DocumentDao {
 
             ps.setString(1, documentName);
             ps.setClob(2, new FileReader(document));
+            ps.setString(3, securityFlag);
 
             ps.executeUpdate();
 

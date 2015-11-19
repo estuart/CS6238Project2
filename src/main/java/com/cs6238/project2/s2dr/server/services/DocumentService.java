@@ -40,10 +40,10 @@ public class DocumentService {
         return ImmutableMap.of("message", message);
     }
 
-    public int uploadDocument(File document, String documentName)
+    public int uploadDocument(File document, String documentName, String securityFlag)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
 
-        return documentDao.uploadDocument(document, documentName);
+        return documentDao.uploadDocument(document, documentName, securityFlag);
     }
 
     public DocumentDownload downloadDocument(int documentId)

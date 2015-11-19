@@ -24,6 +24,8 @@ CREATE TABLE s2dr.Documents
   documentId INT NOT NULL AUTO_INCREMENT,
   documentName VARCHAR (255) NOT NULL,
   contents CLOB NOT NULL,
+  securityFlag VARCHAR (255) NOT NULL,
+  CONSTRAINT check_security CHECK (securityFlag IN ('NONE', 'INTEGRITY', 'CONFIDENTIALITY')),
   PRIMARY KEY (documentId)
 );
 
