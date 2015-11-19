@@ -16,7 +16,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -29,7 +28,6 @@ public class RestEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(RestEndpoint.class);
 
     private final DocumentService documentService;
-
 
     @Inject
     RestEndpoint(DocumentService documentService) {
