@@ -6,6 +6,8 @@ import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsExceptio
 import com.cs6238.project2.s2dr.server.exceptions.TooManyQueryResultsException;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
+import org.apache.commons.lang3.StringUtils;
+import org.h2.tools.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,16 +26,18 @@ public class DocumentDao {
 
     private final Connection conn;
 
+
     @Inject
-    public DocumentDao(Connection conn) {
+    public DocumentDao(Connection conn) throws SQLException {
         this.conn = conn;
     }
 
+
     public String getUserName(int userId) throws SQLException, UnexpectedQueryResultsException {
         String query =
-                "SELECT *" +
-                "  FROM s2dr.Users" +
-                " WHERE userId = ?";
+                "SELECT * " +
+                "FROM s2dr.Users " +
+                "WHERE userId = ?";
 
         PreparedStatement preparedStatement = null;
         try {
@@ -70,8 +74,8 @@ public class DocumentDao {
     public int uploadDocument(File document, String documentName, String securityFlag)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
         String query =
-                "INSERT INTO s2dr.Documents (documentName, contents, securityFlag)" +
-                "     VALUES (?, ?, ?)";
+                "INSERT INTO s2dr.Documents (documentName, contents, securityFlag) " +
+                "VALUES (?, ?, ?)";
 
         PreparedStatement ps = null;
         try {
@@ -111,9 +115,9 @@ public class DocumentDao {
     public DocumentDownload downloadDocument(int documentId)
             throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException {
         String query =
-                "SELECT *" +
-                "  FROM s2dr.Documents" +
-                " WHERE documentId = ?";
+                "SELECT * " +
+                "FROM s2dr.Documents " +
+                "WHERE documentId = ?";
 
         PreparedStatement ps = null;
         try {
@@ -152,8 +156,8 @@ public class DocumentDao {
     public void delegatePermissions(int documentId, DelegatePermissionParams delegateParams) throws SQLException {
         String query =
                 "INSERT INTO s2dr.DocumentPermissions" +
-                "            (documentId, clientId, permission, canPropogate)" +
-                "     VALUES (?, ?, ?, ?)";
+                "   (documentId, clientId, permission, canPropogate)" +
+                "VALUES (?, ?, ?, ?)";
 
         PreparedStatement ps = null;
         try {
@@ -173,21 +177,68 @@ public class DocumentDao {
         }
     }
 
+
     public void deleteDocument(int documentId) throws SQLException {
-        String query =
-                "DELETE" +
-                "  FROM s2dr.Documents" +
-                " WHERE documentId = ?";
-
-        PreparedStatement ps = null;
+        Integer clobLength;
+        //This query gets the length of the current clob
+        String sizeQuery =
+                "SELECT * " +
+                "FROM s2dr.Documents " +
+                "WHERE documentId = (?)";
+        PreparedStatement ps1 = null;
         try {
-            ps = conn.prepareStatement(query);
-            ps.setInt(1, documentId);
+            ps1 = conn.prepareStatement(sizeQuery);
+            ps1.setInt(1, documentId);
+            ResultSet rs = ps1.executeQuery();
 
-            ps.executeUpdate();
+            if (!rs.next()) {
+                // no documents matched the given documentId
+                throw new SQLException();
+            }
+            //get clob size
+            clobLength = rs.getClob("contents").getSubString((long)1, (int)(rs.getClob("contents").length())).length() - 1;
         } finally {
-            if (ps != null) {
-                ps.close();
+            if (ps1 != null) {
+                ps1.close();
+            }
+        }
+
+        //Now that we know the clob length we insert a clob of zeros to overwrite it in memory
+        String zeroClob = StringUtils.repeat("0", clobLength);
+        String zeroQuery =
+                "UPDATE s2dr.Documents " +
+                "SET contents = (?) " +
+                "WHERE documentID = (?)";
+
+        PreparedStatement ps2 = null;
+        try {
+            ps2 = conn.prepareStatement(zeroQuery);
+
+            ps2.setString(1, zeroClob);
+            ps2.setInt(2, documentId);
+            ps2.executeUpdate();
+
+        } finally {
+            if (ps2 != null) {
+                ps2.close();
+            }
+        }
+
+        //Finally we delete the document securely since the file content was overwritten with zeroes
+        String query =
+                "DELETE " +
+                "FROM s2dr.Documents " +
+                "WHERE documentId = (?)";
+
+        PreparedStatement ps3 = null;
+        try {
+            ps3 = conn.prepareStatement(query);
+            ps3.setInt(1, documentId);
+
+            ps3.executeUpdate();
+        } finally {
+            if (ps3 != null) {
+                ps3.close();
             }
         }
     }
