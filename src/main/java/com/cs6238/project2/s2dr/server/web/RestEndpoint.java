@@ -11,19 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -36,6 +29,7 @@ public class RestEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(RestEndpoint.class);
 
     private final DocumentService documentService;
+
 
     @Inject
     RestEndpoint(DocumentService documentService) {
@@ -66,12 +60,13 @@ public class RestEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response uploadDocument(
             @FormDataParam("document") File document,
-            @FormDataParam("documentName") String documentName)
+            @FormDataParam("documentName") String documentName,
+            @FormDataParam("securityFlag") String securityFlag)
             throws SQLException, FileNotFoundException, URISyntaxException, UnexpectedQueryResultsException {
 
         LOG.info("Uploading new document named: {}", documentName);
 
-        int newDocumentId = documentService.uploadDocument(document, documentName);
+        int newDocumentId = documentService.uploadDocument(document, documentName, securityFlag);
 
         LOG.info("Successfully uploaded document with ID: {}", newDocumentId);
         // return HTTP 201 with URI to the created resource
