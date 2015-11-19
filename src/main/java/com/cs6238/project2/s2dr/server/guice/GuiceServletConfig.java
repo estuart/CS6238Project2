@@ -38,30 +38,30 @@ public class GuiceServletConfig extends GuiceServletContextListener {
 
         return injector;
     }
-    @Override
-    public void contextInitialized(ServletContextEvent servletContextEvent){
-        super.contextInitialized(servletContextEvent);
-        try {
-            final Connection conn = injector.getInstance(Connection.class);
-            thread = new Thread(){
-                public void run() {
-                    try {
-                        Server.startWebServer(conn);
-                    } catch (SQLException e) {
-                        LOG.debug("Server Not Starting");
-                    }
-                }
-            };
-            thread.start();
-        } finally {
-            LOG.debug("Exiting H2 server.");
-        }
-    }
-
-    @Override
-    public void contextDestroyed( ServletContextEvent servletContextEvent){
-        thread.stop();
-        super.contextDestroyed(servletContextEvent);
-
-    }
+//    @Override
+//    public void contextInitialized(ServletContextEvent servletContextEvent){
+//        super.contextInitialized(servletContextEvent);
+//        try {
+//            final Connection conn = injector.getInstance(Connection.class);
+//            thread = new Thread(){
+//                public void run() {
+//                    try {
+//                        Server.startWebServer(conn);
+//                    } catch (SQLException e) {
+//                        LOG.debug("Server Not Starting");
+//                    }
+//                }
+//            };
+//            thread.start();
+//        } finally {
+//            LOG.debug("Exiting H2 server.");
+//        }
+//    }
+//
+//    @Override
+//    public void contextDestroyed( ServletContextEvent servletContextEvent){
+//        thread.stop();
+//        super.contextDestroyed(servletContextEvent);
+//
+//    }
 }
