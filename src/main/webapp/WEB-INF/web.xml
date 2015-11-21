@@ -20,7 +20,7 @@
         <filter-class>org.glassfish.jersey.servlet.ServletContainer</filter-class>
         <init-param>
             <param-name>javax.ws.rs.Application</param-name>
-            <param-value>com.cs6238.project2.s2dr.server.guice.JerseyConfiguration</param-value>
+            <param-value>com.cs6238.project2.s2dr.server.config.JerseyConfiguration</param-value>
         </init-param>
     </filter>
     <filter-mapping>
@@ -29,7 +29,7 @@
     </filter-mapping>
 
     <listener>
-        <listener-class>com.cs6238.project2.s2dr.server.guice.GuiceServletConfig</listener-class>
+        <listener-class>com.cs6238.project2.s2dr.server.config.GuiceServletConfig</listener-class>
     </listener>
 
 </web-app>

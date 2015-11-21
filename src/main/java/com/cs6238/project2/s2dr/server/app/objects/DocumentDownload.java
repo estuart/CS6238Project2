@@ -1,4 +1,4 @@
-package com.cs6238.project2.s2dr.server.pojos;
+package com.cs6238.project2.s2dr.server.app.objects;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;

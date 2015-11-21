@@ -1,4 +1,4 @@
-package com.cs6238.project2.s2dr.server.guice;
+package com.cs6238.project2.s2dr.server.config;
 
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import org.h2.tools.Server;

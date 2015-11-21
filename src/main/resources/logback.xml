@@ -7,7 +7,7 @@
         </layout>
     </appender>
 
-    <logger name="com.cs6238.project2.s2dr.server" level="TRACE"/>
+    <logger name="server" level="TRACE"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT" />
