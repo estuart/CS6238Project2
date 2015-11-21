@@ -5,6 +5,7 @@ import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
+import com.cs6238.project2.s2dr.server.pojos.DocumentPermission;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,18 @@ public class DocumentService {
     public int uploadDocument(File document, String documentName, String securityFlag)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
 
-        return documentDao.uploadDocument(document, documentName, securityFlag);
+        int documentId = documentDao.uploadDocument(document, documentName, securityFlag);
+
+        // TODO once we add a user session (login), we will have access to the "currentUserId"
+        // TODO without making a query. For now the name is just hardcoded in.
+        int currentUserId = documentDao.getUserIdByName("Puckett, Michael");
+
+        // when a user uploads a new document, we add an "Owner" permission for that user.
+        // TODO once we add the "time" parameter, this should add an "unlimited" time for the uploader
+        documentDao.delegatePermissions(documentId,
+                new DelegatePermissionParams(DocumentPermission.OWNER, currentUserId, true));
+
+        return documentId;
     }
 
     public DocumentDownload downloadDocument(int documentId)

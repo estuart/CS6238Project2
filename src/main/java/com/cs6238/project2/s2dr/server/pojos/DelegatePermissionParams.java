@@ -4,18 +4,33 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
+// TODO add a permission time limit param
 public class DelegatePermissionParams {
 
     private DocumentPermission permission;
-    private String clientId;
+    private int userId;
     private boolean canPropogate;
+
+    @SuppressWarnings("unused")
+    // this default is required for Jackson
+    public DelegatePermissionParams() {}
+
+    public DelegatePermissionParams(
+            DocumentPermission permission,
+            int userId,
+            boolean canPropogate) {
+
+        this.permission = permission;
+        this.userId = userId;
+        this.canPropogate = canPropogate;
+    }
 
     public DocumentPermission getPermission() {
         return permission;
     }
 
-    public String getClientId() {
-        return clientId;
+    public int getUserId() {
+        return userId;
     }
 
     public boolean getCanPropogate() {
