@@ -69,6 +69,12 @@ public class DocumentService {
     }
 
     public void deleteDocument(int documentId) throws SQLException {
+
+        // delete all permissions for the document before deleting the document
+        LOG.info("Deleting all permissions for document: {}", documentId);
+        documentDao.deleteAllDocumentPermissions(documentId);
+
+        LOG.info("Performing safe delete on document: {}", documentId);
         documentDao.deleteDocument(documentId);
     }
 }
