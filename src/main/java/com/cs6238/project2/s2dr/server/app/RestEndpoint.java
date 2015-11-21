@@ -1,10 +1,9 @@
-package com.cs6238.project2.s2dr.server.web;
+package com.cs6238.project2.s2dr.server.app;
 
-import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
-import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
-import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
-import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
-import com.cs6238.project2.s2dr.server.services.DocumentService;
+import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
+import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.slf4j.Logger;

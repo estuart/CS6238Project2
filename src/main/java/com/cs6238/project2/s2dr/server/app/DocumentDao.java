@@ -1,11 +1,11 @@
-package com.cs6238.project2.s2dr.server.dao;
+package com.cs6238.project2.s2dr.server.app;
 
-import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
-import com.cs6238.project2.s2dr.server.exceptions.NoQueryResultsException;
-import com.cs6238.project2.s2dr.server.exceptions.TooManyQueryResultsException;
-import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
-import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
-import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
+import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.exceptions.TooManyQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
+import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

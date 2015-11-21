@@ -1,6 +1,6 @@
-package com.cs6238.project2.s2dr.server.guice;
+package com.cs6238.project2.s2dr.server.config;
 
-import com.cs6238.project2.s2dr.server.web.RestEndpoint;
+import com.cs6238.project2.s2dr.server.app.RestEndpoint;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;

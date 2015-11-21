@@ -1,11 +1,10 @@
-package com.cs6238.project2.s2dr.server.services;
+package com.cs6238.project2.s2dr.server.app;
 
-import com.cs6238.project2.s2dr.server.dao.DocumentDao;
-import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
-import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
-import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
-import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
-import com.cs6238.project2.s2dr.server.pojos.DocumentPermission;
+import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
+import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
+import com.cs6238.project2.s2dr.server.app.objects.DocumentPermission;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

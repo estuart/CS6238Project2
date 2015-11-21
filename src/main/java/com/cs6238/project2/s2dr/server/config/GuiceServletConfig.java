@@ -1,6 +1,6 @@
-package com.cs6238.project2.s2dr.server.guice;
+package com.cs6238.project2.s2dr.server.config;
 
-import com.cs6238.project2.s2dr.server.services.DocumentService;
+import com.cs6238.project2.s2dr.server.app.DocumentService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
