@@ -2,12 +2,11 @@ package com.cs6238.project2.s2dr.server.dao;
 
 import com.cs6238.project2.s2dr.server.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.exceptions.NoQueryResultsException;
-import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
 import com.cs6238.project2.s2dr.server.exceptions.TooManyQueryResultsException;
+import com.cs6238.project2.s2dr.server.exceptions.UnexpectedQueryResultsException;
 import com.cs6238.project2.s2dr.server.pojos.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.pojos.DocumentDownload;
 import org.apache.commons.lang3.StringUtils;
-import org.h2.tools.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +18,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 public class DocumentDao {
 
@@ -31,7 +32,6 @@ public class DocumentDao {
     public DocumentDao(Connection conn) throws SQLException {
         this.conn = conn;
     }
-
 
     public String getUserName(int userId) throws SQLException, UnexpectedQueryResultsException {
         String query =
@@ -63,10 +63,46 @@ public class DocumentDao {
                         String.format("Was expecting only a single result from query: %s", query));
             }
 
-            return firstName + " " + lastName;
+            // format as "lastName, firstName"
+            return lastName + ", " + firstName;
         } finally {
             if (preparedStatement != null) {
                 preparedStatement.close();
+            }
+        }
+    }
+
+    public int getUserIdByName(String name) throws SQLException, UnexpectedQueryResultsException {
+
+        // It is expected that the name is formatted as "lastName, firstName"
+        List<String> nameSplit = Arrays.asList(name.split(","));
+
+        String query =
+                "SELECT userId" +
+                "  FROM s2dr.Users" +
+                " WHERE UPPER(firstName) = ?" +
+                "   AND UPPER(lastName) = ?";
+
+        PreparedStatement ps = null;
+
+        try {
+            ps = conn.prepareStatement(query);
+
+            ps.setString(1, nameSplit.get(1).trim().toUpperCase());
+            ps.setString(2, nameSplit.get(0).trim().toUpperCase());
+
+            ResultSet rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                throw new NoQueryResultsException(String.format("No users who match the provided name: %s", name));
+            }
+
+            // naive to assume there is only one user with that particular name, however
+            // it should be fine for this project
+            return rs.getInt("userId");
+        } finally {
+            if (ps != null) {
+                ps.close();
             }
         }
     }
@@ -156,7 +192,7 @@ public class DocumentDao {
     public void delegatePermissions(int documentId, DelegatePermissionParams delegateParams) throws SQLException {
         String query =
                 "INSERT INTO s2dr.DocumentPermissions" +
-                "   (documentId, clientId, permission, canPropogate)" +
+                "   (documentId, userId, permission, canPropogate)" +
                 "VALUES (?, ?, ?, ?)";
 
         PreparedStatement ps = null;
@@ -164,7 +200,7 @@ public class DocumentDao {
             ps = conn.prepareStatement(query);
 
             ps.setInt(1, documentId);
-            ps.setString(2, delegateParams.getClientId());
+            ps.setInt(2, delegateParams.getUserId());
             ps.setString(3, delegateParams.getPermission().toString());
             ps.setBoolean(4, delegateParams.getCanPropogate());
 

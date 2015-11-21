@@ -32,11 +32,11 @@ CREATE TABLE s2dr.Documents
 CREATE TABLE s2dr.DocumentPermissions
 (
   documentId INT NOT NULL,
-  clientId VARCHAR (255) NOT NULL,
+  userId INT NOT NULL,
   permission VARCHAR (5) NOT NULL,
   canPropogate VARCHAR(5) NOT NULL,
   FOREIGN KEY (documentId) REFERENCES s2dr.Documents(documentId),
-  FOREIGN KEY (clientId) REFERENCES s2dr.Users(userId)
+  FOREIGN KEY (userId) REFERENCES s2dr.Users(userId)
 );
 -- TODO constrain DocumentPermissions.permission to be only "READ", "WRITE", "BOTH", or "OWNER"
 -- TODO constrain DocumentPermissions.canPropogate to be only "Y" or "N"
