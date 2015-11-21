@@ -121,7 +121,7 @@ public class RestEndpoint {
     @Path("/document/{documentId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteDocument(@PathParam("documentId") int documentId) throws SQLException{
-        LOG.info("Deleting document: {}", documentId);
+        LOG.info("Received request to delete document: {}", documentId);
         documentService.deleteDocument(documentId);
 
         // return 200

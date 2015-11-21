@@ -278,4 +278,22 @@ public class DocumentDao {
             }
         }
     }
+
+    public void deleteAllDocumentPermissions(int documentId) throws SQLException {
+        String query =
+                "DELETE" +
+                "  FROM s2dr.DocumentPermissions" +
+                " WHERE documentId = ?";
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(query);
+            ps.setInt(1, documentId);
+            ps.executeUpdate();
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
 }
