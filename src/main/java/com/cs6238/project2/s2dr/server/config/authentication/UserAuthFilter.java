@@ -1,9 +1,7 @@
 package com.cs6238.project2.s2dr.server.config.authentication;
 
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
-import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.web.filter.authc.AuthenticatingFilter;
 import org.apache.shiro.web.util.WebUtils;
@@ -21,6 +19,8 @@ public class UserAuthFilter extends AuthenticatingFilter {
     @Override
     protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) throws Exception {
         LOG.info("Creating Token");
+
+        // TODO figure out where this is used (if it is).
         return null;
     }
 

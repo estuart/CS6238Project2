@@ -5,7 +5,6 @@ import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsExce
 import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
@@ -13,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -21,16 +21,15 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.cert.X509Certificate;
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.Optional;
 
 @Path("s2dr")
 public class RestEndpoint {
@@ -38,41 +37,31 @@ public class RestEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(RestEndpoint.class);
 
     private final DocumentService documentService;
+    private final LoginService loginService;
 
     @Inject
-    RestEndpoint(DocumentService documentService) {
+    RestEndpoint(
+            DocumentService documentService,
+            LoginService loginService) {
+
         this.documentService = documentService;
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> helloWorld() throws SQLException, UnexpectedQueryResultsException {
-
-        LOG.info("Hello World");
-        return documentService.getHelloMessage(Optional.<Integer>empty());
-    }
-
-    @GET
-    @Path("/personal")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> helloName(@QueryParam("userId") Integer userId)
-            throws SQLException, UnexpectedQueryResultsException {
-
-        LOG.info("Getting personal hello message for userId: {}", userId);
-        return documentService.getHelloMessage(Optional.ofNullable(userId));
+        this.loginService = loginService;
     }
 
     @POST
     @Path("/login")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response login(@FormDataParam("username") String username,
-                          @FormDataParam("password") String password) {
+    public Response login(@Context HttpServletRequest request) {
 
-        Subject currentUser = SecurityUtils.getSubject();
+        X509Certificate cert = ((X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate"))[0];
 
-        // this will throw an exception if login fails
-        currentUser.login(new UsernamePasswordToken(username, password));
+        try {
+            loginService.login(cert);
+        } catch (Exception e) {
+            LOG.error("Error logging user in", e);
+            return Response.serverError().entity(e).build();
+        }
 
         return Response.ok().build();
     }
@@ -159,6 +148,8 @@ public class RestEndpoint {
     public Response logout() {
         Subject currentUser = SecurityUtils.getSubject();
         currentUser.logout();
+
+        // TODO #35 figure out how to handle the session scoped CurrentUser
 
         return Response.ok().build();
     }

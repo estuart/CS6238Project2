@@ -2,12 +2,13 @@ package com.cs6238.project2.s2dr.server.config.authentication;
 
 import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.TooManyQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.objects.CurrentUser;
 import com.cs6238.project2.s2dr.server.app.objects.User;
+import com.cs6238.project2.s2dr.server.config.GuiceServletConfig;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.SimpleAuthenticationInfo;
-import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
@@ -23,7 +24,7 @@ public class UserAuthRealm extends AuthorizingRealm {
     @Override
     public boolean supports(AuthenticationToken token) {
         LOG.info("Checking if AuthenticationToken is supported");
-        return token instanceof UsernamePasswordToken;
+        return token instanceof X509Token;
     }
 
     @Override
@@ -35,12 +36,11 @@ public class UserAuthRealm extends AuthorizingRealm {
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
         LOG.info("Checking for Authentication Info");
 
-        UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken) token;
+        X509Token x509Token = (X509Token) token;
 
         User user;
         try {
-            user = AuthenticationDao.getUser(
-                    usernamePasswordToken.getUsername(), new String(usernamePasswordToken.getPassword()));
+            user = AuthenticationDao.getUser(x509Token);
 
         } catch (SQLException | NoQueryResultsException | TooManyQueryResultsException e) {
             throw new AuthenticationException(
@@ -49,7 +49,10 @@ public class UserAuthRealm extends AuthorizingRealm {
 
         LOG.info("Successfully authenticated {}", user);
 
+        CurrentUser currentUser = GuiceServletConfig.injector.getInstance(CurrentUser.class);
+        currentUser.setCurrentUser(user);
+
         return new SimpleAuthenticationInfo(
-                user, usernamePasswordToken.getCredentials(), this.getName());
+                user, x509Token.getCredentials(), this.getName());
     }
 }

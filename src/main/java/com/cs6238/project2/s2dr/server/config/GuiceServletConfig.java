@@ -1,6 +1,8 @@
 package com.cs6238.project2.s2dr.server.config;
 
 import com.cs6238.project2.s2dr.server.app.DocumentService;
+import com.cs6238.project2.s2dr.server.app.LoginService;
+import com.cs6238.project2.s2dr.server.app.objects.CurrentUser;
 import com.cs6238.project2.s2dr.server.config.authentication.UserAuthShiroModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -9,6 +11,7 @@ import com.google.inject.Singleton;
 import com.google.inject.Stage;
 import com.google.inject.servlet.GuiceServletContextListener;
 import com.google.inject.servlet.ServletModule;
+import com.google.inject.servlet.SessionScoped;
 import org.apache.shiro.guice.web.ShiroWebModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +40,9 @@ public class GuiceServletConfig extends GuiceServletContextListener {
                         // that are injected into non Jersey-configured classes
                         // will not require this
                         bind(DocumentService.class);
+                        bind(LoginService.class);
+
+                        bind(CurrentUser.class).in(SessionScoped.class);
 
                         // include shiro filters to the guice filter
                         ShiroWebModule.bindGuiceFilter(binder());

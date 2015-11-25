@@ -14,40 +14,37 @@ public class AuthenticationDao {
 
     private static final Connection connection = GuiceServletConfig.injector.getInstance(Connection.class);
 
-    public static User getUser(String userName, String password)
+    public static User getUser(X509Token token)
             throws SQLException, NoQueryResultsException, TooManyQueryResultsException {
 
         String query =
                 "SELECT userId," +
-                "       firstName," +
-                "       lastName," +
                 "       userName" +
                 "  FROM s2dr.Users" +
                 " WHERE userName = (?)" +
-                "   AND password = (?)";
+                "   AND signature = (?)";
 
         PreparedStatement ps = null;
         try {
             ps = connection.prepareStatement(query);
 
-            ps.setString(1, userName);
-            ps.setString(2, password);
+            ps.setString(1, token.getX500Principal().getName());
+            ps.setBytes(2, token.getSignature());
 
             ResultSet rs = ps.executeQuery();
 
             if (!rs.next()) {
-                throw new NoQueryResultsException("No username/password combination matches the provided credentials");
+                throw new NoQueryResultsException("No username/signature combination matches the provided credentials");
             }
 
             User user = User.builder()
                     .setUserId(rs.getInt(1))
-                    .setFirstName(rs.getString(2))
-                    .setLastName(rs.getString(3))
-                    .setUserName(rs.getString(4))
+                    .setUserName(rs.getString(2))
                     .build();
 
             if (rs.next()) {
-                throw new TooManyQueryResultsException("Two users configured with the same username/password combination");
+                throw new TooManyQueryResultsException(
+                        "Two users configured with the same username/signature combination");
             }
 
             return user;
