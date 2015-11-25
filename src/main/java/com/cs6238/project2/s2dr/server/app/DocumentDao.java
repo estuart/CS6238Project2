@@ -46,7 +46,11 @@ public class DocumentDao {
 
             ResultSet rs = ps.executeQuery();
 
-            return rs.next();
+            // PMD doesn't like `return rs.next();` so we have to do this
+            if (rs.next()) {
+                return true;
+            }
+            return false;
         } finally {
             if (ps != null) {
                 ps.close();
@@ -84,8 +88,8 @@ public class DocumentDao {
 
         String query =
                 "UPDATE s2dr.Documents" +
-                "   SET contents       = ?," +
-                "       securityFlag   = ?" +
+                "   SET contents = ?," +
+                "       securityFlag = ?" +
                 " WHERE documentName = ?";
 
         PreparedStatement ps = null;
