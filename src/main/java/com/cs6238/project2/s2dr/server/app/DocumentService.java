@@ -2,10 +2,10 @@ package com.cs6238.project2.s2dr.server.app;
 
 import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.objects.CurrentUser;
 import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentPermission;
-import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,31 +13,21 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.Optional;
 
 public class DocumentService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DocumentService.class);
 
+    private final CurrentUser currentUser;
     private final DocumentDao documentDao;
 
     @Inject
-    public DocumentService(DocumentDao documentDao) {
+    public DocumentService(
+            CurrentUser currentUser,
+            DocumentDao documentDao) {
+
+        this.currentUser = currentUser;
         this.documentDao = documentDao;
-    }
-
-    public Map<String, String> getHelloMessage(Optional<Integer> userId)
-            throws SQLException, UnexpectedQueryResultsException {
-
-        String name;
-        if (!userId.isPresent()) {
-            name = "World";
-        } else {
-            name = documentDao.getUserName(userId.get());
-        }
-        String message = "Hello " + name + "!";
-        return ImmutableMap.of("message", message);
     }
 
     public int uploadDocument(File document, String documentName, String securityFlag)
@@ -45,9 +35,7 @@ public class DocumentService {
 
         int documentId = documentDao.uploadDocument(document, documentName, securityFlag);
 
-        // TODO once we add a user session (login), we will have access to the "currentUserId"
-        // TODO without making a query. For now the name is just hardcoded in.
-        int currentUserId = documentDao.getUserIdByName("Puckett, Michael");
+        int currentUserId = currentUser.getCurrentUser().getUserId();
 
         // when a user uploads a new document, we add an "Owner" permission for that user.
         // TODO once we add the "time" parameter, this should add an "unlimited" time for the uploader

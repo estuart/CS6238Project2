@@ -12,22 +12,10 @@ public class User {
 
     public static class Builder {
         private int userId;
-        private String firstName;
-        private String lastName;
         private String userName;
 
         public Builder setUserId(int userId) {
             this.userId = userId;
-            return this;
-        }
-
-        public Builder setFirstName(String firstName) {
-            this.firstName = firstName;
-            return this;
-        }
-
-        public Builder setLastName(String lastName) {
-            this.lastName = lastName;
             return this;
         }
 
@@ -39,43 +27,23 @@ public class User {
         public User build() {
             return new User(
                     userId,
-                    firstName,
-                    lastName,
                     userName);
         }
     }
 
     private final int userId;
-    private final String firstName;
-    private final String lastName;
     private final String userName;
 
     private User(
             int userId,
-            String firstName,
-            String lastName,
             String userName) {
 
         this.userId = userId;
-        this.firstName = firstName;
-        this.lastName = lastName;
         this.userName = userName;
     }
 
     public int getUserId() {
         return userId;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public String getFullName() {
-        return lastName + ", " + firstName;
     }
 
     public String getUserName() {

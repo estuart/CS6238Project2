@@ -11,15 +11,10 @@ CREATE SCHEMA s2dr;
 CREATE TABLE s2dr.Users
 (
   userId INT NOT NULL AUTO_INCREMENT,
-  firstName VARCHAR (255) NOT NULL,
-  lastName VARCHAR (255) NOT NULL,
   userName VARCHAR (255) NOT NULL,
-  password VARCHAR (255) NOT NULL,
+  signature BLOB NOT NULL,
   PRIMARY KEY (userId)
 );
-
-INSERT INTO s2dr.Users (firstName, lastName, userName, password) VALUES ('Michael', 'Puckett', 'mpuckett', 'password');
-INSERT INTO s2dr.Users (firstName, lastName, userName, password) VALUES ('Evan', 'Stuart', 'estuart', 'password');
 
 CREATE TABLE s2dr.Documents
 (

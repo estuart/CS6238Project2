@@ -18,8 +18,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
 
 public class DocumentDao {
 
@@ -27,84 +25,9 @@ public class DocumentDao {
 
     private final Connection conn;
 
-
     @Inject
     public DocumentDao(Connection conn) throws SQLException {
         this.conn = conn;
-    }
-
-    public String getUserName(int userId) throws SQLException, UnexpectedQueryResultsException {
-        String query =
-                "SELECT * " +
-                "FROM s2dr.Users " +
-                "WHERE userId = ?";
-
-        PreparedStatement preparedStatement = null;
-        try {
-            preparedStatement = conn.prepareStatement(query);
-            preparedStatement.setInt(1, userId);
-
-            ResultSet rs = preparedStatement.executeQuery();
-
-            String firstName, lastName;
-
-            if (!rs.next()) {
-                // no results were found when we were expecting one
-                throw new NoQueryResultsException(
-                        String.format("Was expecting at least one result from query: %s", query));
-            }
-
-            firstName = rs.getString("firstName");
-            lastName = rs.getString("lastName");
-
-            if (rs.next()) {
-                // multiple results were returned when we only expected one
-                throw new TooManyQueryResultsException(
-                        String.format("Was expecting only a single result from query: %s", query));
-            }
-
-            // format as "lastName, firstName"
-            return lastName + ", " + firstName;
-        } finally {
-            if (preparedStatement != null) {
-                preparedStatement.close();
-            }
-        }
-    }
-
-    public int getUserIdByName(String name) throws SQLException, UnexpectedQueryResultsException {
-
-        // It is expected that the name is formatted as "lastName, firstName"
-        List<String> nameSplit = Arrays.asList(name.split(","));
-
-        String query =
-                "SELECT userId" +
-                "  FROM s2dr.Users" +
-                " WHERE UPPER(firstName) = ?" +
-                "   AND UPPER(lastName) = ?";
-
-        PreparedStatement ps = null;
-
-        try {
-            ps = conn.prepareStatement(query);
-
-            ps.setString(1, nameSplit.get(1).trim().toUpperCase());
-            ps.setString(2, nameSplit.get(0).trim().toUpperCase());
-
-            ResultSet rs = ps.executeQuery();
-
-            if (!rs.next()) {
-                throw new NoQueryResultsException(String.format("No users who match the provided name: %s", name));
-            }
-
-            // naive to assume there is only one user with that particular name, however
-            // it should be fine for this project
-            return rs.getInt("userId");
-        } finally {
-            if (ps != null) {
-                ps.close();
-            }
-        }
     }
 
     public int uploadDocument(File document, String documentName, String securityFlag)

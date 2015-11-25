@@ -14,11 +14,9 @@ apply plugin: "org.akhikhl.gretty"
 apply plugin: 'pmd'
 
 gretty {
-    port = 8080
     contextPath = '/'
     servletContainer = 'tomcat8'
-
-    httpsEnabled = true
+    serverConfigFile = 'tomcat/server.xml'
 }
 
 repositories {
