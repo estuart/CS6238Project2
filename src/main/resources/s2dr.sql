@@ -18,21 +18,20 @@ CREATE TABLE s2dr.Users
 
 CREATE TABLE s2dr.Documents
 (
-  documentId INT NOT NULL AUTO_INCREMENT,
   documentName VARCHAR (255) NOT NULL,
   contents CLOB NOT NULL,
   securityFlag VARCHAR (255) NOT NULL,
   CONSTRAINT check_security CHECK (securityFlag IN ('NONE', 'INTEGRITY', 'CONFIDENTIALITY')),
-  PRIMARY KEY (documentId)
+  PRIMARY KEY (documentName)
 );
 
 CREATE TABLE s2dr.DocumentPermissions
 (
-  documentId INT NOT NULL,
+  documentName VARCHAR (255) NOT NULL,
   userId INT NOT NULL,
   permission VARCHAR (5) NOT NULL,
-  canPropogate VARCHAR(5) NOT NULL,
-  FOREIGN KEY (documentId) REFERENCES s2dr.Documents(documentId),
+  canPropogate VARCHAR (5) NOT NULL,
+  FOREIGN KEY (documentName) REFERENCES s2dr.Documents(documentName),
   FOREIGN KEY (userId) REFERENCES s2dr.Users(userId)
 );
 -- TODO constrain DocumentPermissions.permission to be only "READ", "WRITE", "BOTH", or "OWNER"

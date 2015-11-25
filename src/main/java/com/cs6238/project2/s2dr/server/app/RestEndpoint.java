@@ -1,9 +1,11 @@
 package com.cs6238.project2.s2dr.server.app;
 
 import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
+import com.cs6238.project2.s2dr.server.app.objects.SecurityFlag;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -78,26 +80,27 @@ public class RestEndpoint {
 
         LOG.info("Uploading new document named: {}", documentName);
 
-        int newDocumentId = documentService.uploadDocument(document, documentName, securityFlag);
+        documentService.uploadDocument(document, documentName, SecurityFlag.valueOf(securityFlag));
 
-        LOG.info("Successfully uploaded document with ID: {}", newDocumentId);
+        LOG.info("Successfully uploaded document");
+
         // return HTTP 201 with URI to the created resource
         return Response
-                .created(new URI("/document/" + newDocumentId))
+                .created(new URI("/s2dr/document/" + documentName))
                 .build();
     }
 
     @GET
-    @Path("/document/{documentId}")
+    @Path("/document/{documentName}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public Response downloadDocument(@PathParam("documentId") int documentId)
+    public Response downloadDocument(@PathParam("documentName") String documentName)
             throws SQLException, UnexpectedQueryResultsException {
         
-        LOG.info("Downloading document: {}", documentId);
+        LOG.info("Downloading document: {}", documentName);
 
         DocumentDownload download;
         try {
-            download = documentService.downloadDocument(documentId);
+            download = documentService.downloadDocument(documentName);
         } catch (DocumentNotFoundException e) {
             // return a 404
             return Response
@@ -117,26 +120,28 @@ public class RestEndpoint {
     }
 
     @PUT
-    @Path("/document/{documentId}")
+    @Path("/document/{documentName}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response delegate(@PathParam("documentId") int documentId,
+    public Response delegate(@PathParam("documentName") String documentName,
                              DelegatePermissionParams delegateParams) throws SQLException {
 
-        LOG.info("Delegating permissions: {}, for document: {}", delegateParams, documentId);
+        LOG.info("Delegating permissions: {}, for document: {}", delegateParams, documentName);
 
-        documentService.delegatePermissions(documentId, delegateParams);
+        documentService.delegatePermissions(documentName, delegateParams);
 
         // return 200
         return Response.ok().build();
     }
 
     @DELETE
-    @Path("/document/{documentId}")
+    @Path("/document/{documentName}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteDocument(@PathParam("documentId") int documentId) throws SQLException{
-        LOG.info("Received request to delete document: {}", documentId);
-        documentService.deleteDocument(documentId);
+    public Response deleteDocument(@PathParam("documentName") String documentName)
+            throws SQLException, NoQueryResultsException {
+
+        LOG.info("Received request to delete document: {}", documentName);
+        documentService.deleteDocument(documentName);
 
         // return 200
         return Response.ok().build();

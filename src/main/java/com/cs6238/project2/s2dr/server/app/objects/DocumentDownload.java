@@ -11,14 +11,8 @@ import static java.util.Objects.requireNonNull;
 public class DocumentDownload {
 
     public static class Builder {
-        private int documentId;
         private String documentName;
         private InputStream contents;
-
-        public Builder setDocumentId(int documentId) {
-            this.documentId = documentId;
-            return this;
-        }
 
         public Builder setDocumentName(String documentName) {
             this.documentName = documentName;
@@ -32,7 +26,6 @@ public class DocumentDownload {
 
         public DocumentDownload build() {
             return new DocumentDownload(
-                    documentId,
                     documentName,
                     contents);
         }
@@ -42,22 +35,15 @@ public class DocumentDownload {
         return new Builder();
     }
 
-    private final int documentId;
     private final String documentName;
     private final InputStream contents;
 
     private DocumentDownload(
-            int documentId,
             String documentName,
             InputStream contents) {
 
-        this.documentId = requireNonNull(documentId);
         this.documentName = requireNonNull(documentName);
         this.contents = requireNonNull(contents);
-    }
-
-    public int getDocumentId() {
-        return documentId;
     }
 
     public String getDocumentName() {
