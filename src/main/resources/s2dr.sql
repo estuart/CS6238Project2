@@ -30,6 +30,7 @@ CREATE TABLE s2dr.DocumentPermissions
   documentName VARCHAR (255) NOT NULL,
   userId INT NOT NULL,
   permission VARCHAR (5) NOT NULL,
+  timeLimit TIMESTAMP,
   canPropogate VARCHAR (5) NOT NULL,
   FOREIGN KEY (documentName) REFERENCES s2dr.Documents(documentName),
   FOREIGN KEY (userId) REFERENCES s2dr.Users(userId)

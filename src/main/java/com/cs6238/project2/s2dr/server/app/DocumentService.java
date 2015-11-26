@@ -6,7 +6,6 @@ import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsExce
 import com.cs6238.project2.s2dr.server.app.objects.CurrentUser;
 import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
-import com.cs6238.project2.s2dr.server.app.objects.DocumentPermission;
 import com.cs6238.project2.s2dr.server.app.objects.SecurityFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,6 @@ public class DocumentService {
         if (!documentDao.documentExists(documentName)) {
             documentDao.uploadDocument(document, documentName, securityFlag);
         } else {
-
             // TODO #6 need to check for write permission
             documentDao.overwriteDocument(documentName, document, securityFlag);
         }
@@ -46,9 +44,8 @@ public class DocumentService {
         int currentUserId = currentUser.getCurrentUser().getUserId();
 
         // when a user uploads a new document, we add an "Owner" permission for that user.
-        // TODO once we add the "time" parameter, this should add an "unlimited" time for the uploader
-        documentDao.delegatePermissions(documentName,
-                new DelegatePermissionParams(DocumentPermission.OWNER, currentUserId, true));
+        documentDao.delegatePermissions(
+                documentName, DelegatePermissionParams.getUploaderPermissions(currentUserId));
     }
 
     public DocumentDownload downloadDocument(String documentName)
