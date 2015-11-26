@@ -2,7 +2,6 @@ package com.cs6238.project2.s2dr.server.config.authentication;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.shiro.authc.AuthenticationToken;
 
 import javax.security.auth.x500.X500Principal;

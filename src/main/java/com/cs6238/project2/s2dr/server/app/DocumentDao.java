@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
 public class DocumentDao {
 
@@ -151,8 +152,8 @@ public class DocumentDao {
     public void delegatePermissions(String documentName, DelegatePermissionParams delegateParams) throws SQLException {
         String query =
                 "INSERT INTO s2dr.DocumentPermissions" +
-                "   (documentName, userId, permission, canPropogate)" +
-                "VALUES (?, ?, ?, ?)";
+                "   (documentName, userId, permission, timeLimit, canPropogate)" +
+                "VALUES (?, ?, ?, ?, ?)";
 
         PreparedStatement ps = null;
         try {
@@ -161,7 +162,14 @@ public class DocumentDao {
             ps.setString(1, documentName);
             ps.setInt(2, delegateParams.getUserId());
             ps.setString(3, delegateParams.getPermission().toString());
-            ps.setBoolean(4, delegateParams.getCanPropogate());
+
+            Timestamp timeLimit = null;
+            if (delegateParams.getTimeLimitMillis().isPresent()) {
+                timeLimit = new Timestamp(System.currentTimeMillis() + delegateParams.getTimeLimitMillis().get());
+            }
+            ps.setTimestamp(4, timeLimit);
+
+            ps.setBoolean(5, delegateParams.getCanPropogate());
 
             ps.executeUpdate();
 

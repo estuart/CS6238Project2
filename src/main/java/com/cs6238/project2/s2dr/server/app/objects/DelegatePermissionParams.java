@@ -4,11 +4,13 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
-// TODO add a permission time limit param
+import java.util.Optional;
+
 public class DelegatePermissionParams {
 
     private DocumentPermission permission;
     private int userId;
+    private Long timeLimitMillis;
     private boolean canPropogate;
 
     @SuppressWarnings("unused")
@@ -18,10 +20,12 @@ public class DelegatePermissionParams {
     public DelegatePermissionParams(
             DocumentPermission permission,
             int userId,
+            Long timeLimitMillis,
             boolean canPropogate) {
 
         this.permission = permission;
         this.userId = userId;
+        this.timeLimitMillis = timeLimitMillis;
         this.canPropogate = canPropogate;
     }
 
@@ -33,8 +37,20 @@ public class DelegatePermissionParams {
         return userId;
     }
 
+    public Optional<Long> getTimeLimitMillis() {
+        return Optional.ofNullable(timeLimitMillis);
+    }
+
     public boolean getCanPropogate() {
         return canPropogate;
+    }
+
+    public static DelegatePermissionParams getUploaderPermissions(int userId) {
+        return new DelegatePermissionParams(
+                DocumentPermission.OWNER,
+                userId,
+                null,
+                true);
     }
 
     @Override
