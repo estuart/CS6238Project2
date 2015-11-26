@@ -23,7 +23,6 @@ public class UserAuthRealm extends AuthorizingRealm {
 
     @Override
     public boolean supports(AuthenticationToken token) {
-        LOG.info("Checking if AuthenticationToken is supported");
         return token instanceof X509Token;
     }
 
@@ -34,9 +33,8 @@ public class UserAuthRealm extends AuthorizingRealm {
 
     @Override
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
-        LOG.info("Checking for Authentication Info");
-
         X509Token x509Token = (X509Token) token;
+        LOG.info("Checking for authentication info using token {}", token);
 
         User user;
         try {

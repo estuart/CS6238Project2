@@ -28,7 +28,7 @@ public class AuthenticationDao {
         try {
             ps = connection.prepareStatement(query);
 
-            ps.setString(1, token.getX500Principal().getName());
+            ps.setString(1, token.getSubjectCommonName());
             ps.setBytes(2, token.getSignature());
 
             ResultSet rs = ps.executeQuery();
