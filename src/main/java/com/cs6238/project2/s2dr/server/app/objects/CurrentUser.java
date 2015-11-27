@@ -12,4 +12,8 @@ public class CurrentUser {
     public User getCurrentUser() {
         return currentUser;
     }
+
+    public String getUserName() {
+        return currentUser.getUserName();
+    }
 }

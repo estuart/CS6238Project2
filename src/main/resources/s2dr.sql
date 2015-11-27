@@ -10,10 +10,9 @@ CREATE SCHEMA s2dr;
 -- Table that will hold "Users" of the system
 CREATE TABLE s2dr.Users
 (
-  userId INT NOT NULL AUTO_INCREMENT,
   userName VARCHAR (255) NOT NULL,
   signature BLOB NOT NULL,
-  PRIMARY KEY (userId)
+  PRIMARY KEY (userName)
 );
 
 CREATE TABLE s2dr.Documents
@@ -35,7 +34,7 @@ CREATE TABLE s2dr.DocumentSecurity
 CREATE TABLE s2dr.DocumentPermissions
 (
   documentName VARCHAR (255) NOT NULL,
-  userId INT NOT NULL,
+  userName VARCHAR(255) NOT NULL,
   permission VARCHAR (5) NOT NULL,
   CONSTRAINT check_permission CHECK (permission IN ('READ', 'WRITE', 'BOTH', 'OWNER')),
   timeLimit TIMESTAMP,

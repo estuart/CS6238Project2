@@ -18,8 +18,7 @@ public class AuthenticationDao {
             throws SQLException, NoQueryResultsException, TooManyQueryResultsException {
 
         String query =
-                "SELECT userId," +
-                "       userName" +
+                "SELECT userName" +
                 "  FROM s2dr.Users" +
                 " WHERE userName = (?)" +
                 "   AND signature = (?)";
@@ -38,8 +37,7 @@ public class AuthenticationDao {
             }
 
             User user = User.builder()
-                    .setUserId(rs.getInt(1))
-                    .setUserName(rs.getString(2))
+                    .setUserName(rs.getString(1))
                     .build();
 
             if (rs.next()) {

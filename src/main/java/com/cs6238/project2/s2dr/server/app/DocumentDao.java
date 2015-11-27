@@ -180,7 +180,7 @@ public class DocumentDao {
     public void delegatePermissions(String documentName, DelegatePermissionParams delegateParams) throws SQLException {
         String query =
                 "INSERT INTO s2dr.DocumentPermissions" +
-                "   (documentName, userId, permission, timeLimit, canPropogate)" +
+                "   (documentName, userName, permission, timeLimit, canPropogate)" +
                 "VALUES (?, ?, ?, ?, ?)";
 
         PreparedStatement ps = null;
@@ -188,7 +188,7 @@ public class DocumentDao {
             ps = conn.prepareStatement(query);
 
             ps.setString(1, documentName);
-            ps.setInt(2, delegateParams.getUserId());
+            ps.setString(2, delegateParams.getUserName());
             ps.setString(3, delegateParams.getPermission().toString());
 
             Timestamp timeLimit = null;

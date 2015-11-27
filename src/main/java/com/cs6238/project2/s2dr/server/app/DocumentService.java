@@ -52,18 +52,18 @@ public class DocumentService {
             documentDao.setDocumentSecurity(documentName, securityFlag);
         }
 
-        int currentUserId = currentUser.getCurrentUser().getUserId();
+        String currentUserName = currentUser.getUserName();
 
         // when a user uploads a new document, we add an "Owner" permission for that user.
-        LOG.info("Adding owner permission to document \"{}\" for user \"{}\"", documentName, currentUserId);
+        LOG.info("Adding owner permission to document \"{}\" for user \"{}\"", documentName, currentUserName);
         documentDao.delegatePermissions(
-                documentName, DelegatePermissionParams.getUploaderPermissions(currentUserId));
+                documentName, DelegatePermissionParams.getUploaderPermissions(currentUserName));
     }
 
     public DocumentDownload downloadDocument(String documentName)
             throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException {
 
-        LOG.info("User \"{}\" downloading document \"{}\"", currentUser.getCurrentUser().getUserId(), documentName);
+        LOG.info("User \"{}\" downloading document \"{}\"", currentUser.getUserName(), documentName);
         return documentDao.downloadDocument(documentName);
     }
 
