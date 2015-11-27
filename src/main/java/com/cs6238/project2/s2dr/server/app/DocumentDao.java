@@ -60,12 +60,12 @@ public class DocumentDao {
 
     }
 
-    public void uploadDocument(File document, String documentName, SecurityFlag securityFlag)
+    public void uploadDocument(File document, String documentName)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
 
         String query =
-                "INSERT INTO s2dr.Documents (documentName, contents, securityFlag) " +
-                "VALUES (?, ?, ?)";
+                "INSERT INTO s2dr.Documents (documentName, contents) " +
+                "VALUES (?, ?)";
 
         PreparedStatement ps = null;
         try {
@@ -73,7 +73,6 @@ public class DocumentDao {
 
             ps.setString(1, documentName);
             ps.setClob(2, new FileReader(document));
-            ps.setString(3, securityFlag.name());
 
             ps.executeUpdate();
 
@@ -84,13 +83,12 @@ public class DocumentDao {
         }
     }
 
-    public void overwriteDocument(String documentName, File document, SecurityFlag securityFlag)
+    public void overwriteDocument(String documentName, File document)
             throws SQLException, FileNotFoundException {
 
         String query =
                 "UPDATE s2dr.Documents" +
-                "   SET contents = ?," +
-                "       securityFlag = ?" +
+                "   SET contents = ?" +
                 " WHERE documentName = ?";
 
         PreparedStatement ps = null;
@@ -98,8 +96,7 @@ public class DocumentDao {
             ps = conn.prepareCall(query);
 
             ps.setClob(1, new FileReader(document));
-            ps.setString(2, securityFlag.name());
-            ps.setString(3, documentName);
+            ps.setString(2, documentName);
 
             ps.executeUpdate();
         } finally {
@@ -107,6 +104,37 @@ public class DocumentDao {
                 ps.close();
             }
         }
+    }
+
+    public void setDocumentSecurity(String documentName, SecurityFlag securityFlag) throws SQLException {
+
+        String query =
+                "INSERT INTO s2dr.DocumentSecurity (documentName, securityFlag)" +
+                "VALUES (?, ?)";
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(query);
+
+            ps.setString(1, documentName);
+            ps.setString(2, securityFlag.name());
+
+            ps.executeUpdate();
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
+
+    public void clearDocumentSecurity(String documentName) throws SQLException {
+
+        String query =
+                "DELETE" +
+                "  FROM s2dr.DocumentSecurity" +
+                " WHERE documentName = ?";
+
+        deleteByDocumentName(documentName, query);
     }
 
     public DocumentDownload downloadDocument(String documentName)
@@ -233,17 +261,7 @@ public class DocumentDao {
                 "FROM s2dr.Documents " +
                 "WHERE documentName = (?)";
 
-        PreparedStatement ps3 = null;
-        try {
-            ps3 = conn.prepareStatement(query);
-            ps3.setString(1, documentName);
-
-            ps3.executeUpdate();
-        } finally {
-            if (ps3 != null) {
-                ps3.close();
-            }
-        }
+        deleteByDocumentName(documentName, query);
     }
 
     public void deleteAllDocumentPermissions(String documentName) throws SQLException {
@@ -252,6 +270,10 @@ public class DocumentDao {
                 "  FROM s2dr.DocumentPermissions" +
                 " WHERE documentName = ?";
 
+        deleteByDocumentName(documentName, query);
+    }
+
+    private void deleteByDocumentName(String documentName, String query) throws SQLException {
         PreparedStatement ps = null;
         try {
             ps = conn.prepareStatement(query);
