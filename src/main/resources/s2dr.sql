@@ -20,9 +20,16 @@ CREATE TABLE s2dr.Documents
 (
   documentName VARCHAR (255) NOT NULL,
   contents CLOB NOT NULL,
+  PRIMARY KEY (documentName)
+);
+
+CREATE TABLE s2dr.DocumentSecurity
+(
+  documentName VARCHAR (255) NOT NULL,
   securityFlag VARCHAR (255) NOT NULL,
   CONSTRAINT check_security CHECK (securityFlag IN ('NONE', 'INTEGRITY', 'CONFIDENTIALITY')),
-  PRIMARY KEY (documentName)
+  PRIMARY KEY (documentName, securityFlag),
+  FOREIGN KEY (documentName) REFERENCES s2dr.Documents(documentName)
 );
 
 CREATE TABLE s2dr.DocumentPermissions

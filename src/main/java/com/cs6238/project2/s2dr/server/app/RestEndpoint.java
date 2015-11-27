@@ -32,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
+import java.util.Set;
 
 @Path("s2dr")
 public class RestEndpoint {
@@ -75,12 +76,12 @@ public class RestEndpoint {
     public Response uploadDocument(
             @FormDataParam("document") File document,
             @FormDataParam("documentName") String documentName,
-            @FormDataParam("securityFlag") String securityFlag)
+            @FormDataParam("securityFlag") Set<SecurityFlag> securityFlags)
             throws SQLException, FileNotFoundException, URISyntaxException, UnexpectedQueryResultsException {
 
         LOG.info("Uploading new document named: {}", documentName);
 
-        documentService.uploadDocument(document, documentName, SecurityFlag.valueOf(securityFlag));
+        documentService.uploadDocument(document, documentName, securityFlags);
 
         LOG.info("Successfully uploaded document");
 
