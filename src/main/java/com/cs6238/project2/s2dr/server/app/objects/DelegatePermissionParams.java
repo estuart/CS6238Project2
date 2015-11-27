@@ -9,7 +9,7 @@ import java.util.Optional;
 public class DelegatePermissionParams {
 
     private DocumentPermission permission;
-    private int userId;
+    private String userName;
     private Long timeLimitMillis;
     private boolean canPropogate;
 
@@ -19,12 +19,12 @@ public class DelegatePermissionParams {
 
     public DelegatePermissionParams(
             DocumentPermission permission,
-            int userId,
+            String userName,
             Long timeLimitMillis,
             boolean canPropogate) {
 
         this.permission = permission;
-        this.userId = userId;
+        this.userName = userName;
         this.timeLimitMillis = timeLimitMillis;
         this.canPropogate = canPropogate;
     }
@@ -33,8 +33,8 @@ public class DelegatePermissionParams {
         return permission;
     }
 
-    public int getUserId() {
-        return userId;
+    public String getUserName() {
+        return userName;
     }
 
     public Optional<Long> getTimeLimitMillis() {
@@ -45,10 +45,10 @@ public class DelegatePermissionParams {
         return canPropogate;
     }
 
-    public static DelegatePermissionParams getUploaderPermissions(int userId) {
+    public static DelegatePermissionParams getUploaderPermissions(String userName) {
         return new DelegatePermissionParams(
                 DocumentPermission.OWNER,
-                userId,
+                userName,
                 null,
                 true);
     }

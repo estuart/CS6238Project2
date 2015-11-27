@@ -11,13 +11,7 @@ public class User {
     }
 
     public static class Builder {
-        private int userId;
         private String userName;
-
-        public Builder setUserId(int userId) {
-            this.userId = userId;
-            return this;
-        }
 
         public Builder setUserName(String userName) {
             this.userName = userName;
@@ -25,25 +19,15 @@ public class User {
         }
 
         public User build() {
-            return new User(
-                    userId,
-                    userName);
+            return new User(userName);
         }
     }
 
-    private final int userId;
     private final String userName;
 
-    private User(
-            int userId,
-            String userName) {
+    private User(String userName) {
 
-        this.userId = userId;
         this.userName = userName;
-    }
-
-    public int getUserId() {
-        return userId;
     }
 
     public String getUserName() {
