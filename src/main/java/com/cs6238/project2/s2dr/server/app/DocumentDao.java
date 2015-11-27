@@ -4,9 +4,12 @@ import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.TooManyQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.objects.CurrentUser;
 import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
+import com.cs6238.project2.s2dr.server.app.objects.DocumentPermission;
 import com.cs6238.project2.s2dr.server.app.objects.SecurityFlag;
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,16 +23,22 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Set;
 
 public class DocumentDao {
 
     private static final Logger LOG = LoggerFactory.getLogger(DocumentDao.class);
 
     private final Connection conn;
+    private final CurrentUser currentUser;
 
     @Inject
-    public DocumentDao(Connection conn) throws SQLException {
+    public DocumentDao(
+            Connection conn,
+            CurrentUser currentUser) {
+
         this.conn = conn;
+        this.currentUser = currentUser;
     }
 
     public boolean documentExists(String documentName) throws SQLException {
@@ -284,5 +293,41 @@ public class DocumentDao {
                 ps.close();
             }
         }
+    }
+
+    public Set<DocumentPermission> getDocPermsForCurrentUser(String documentName) throws SQLException {
+        ImmutableSet.Builder<DocumentPermission> permissionBuilder = ImmutableSet.builder();
+
+        String query =
+                "SELECT permission" +
+                "  FROM s2dr.DocumentPermissions" +
+                " WHERE documentName = (?)" +
+                "   AND userName = (?)" +
+                "   AND timeLimit IS NULL" +
+                "    OR timeLimit > (?)";
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(query);
+
+            ps.setString(1, documentName);
+            ps.setString(2, currentUser.getUserName());
+            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                permissionBuilder.add(DocumentPermission.valueOf(rs.getString("permission")));
+            }
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+
+        Set<DocumentPermission> permissions = permissionBuilder.build();
+        LOG.info("User \"{}\" possesses the following permissions for document \"{}\": {}",
+                currentUser.getUserName(), documentName, permissions);
+
+        return permissions;
     }
 }

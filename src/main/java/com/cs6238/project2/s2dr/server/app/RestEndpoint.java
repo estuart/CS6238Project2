@@ -3,6 +3,8 @@ package com.cs6238.project2.s2dr.server.app;
 import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
+import com.cs6238.project2.s2dr.server.app.exceptions.UserLacksPermissionException;
+import com.cs6238.project2.s2dr.server.app.objects.CurrentUser;
 import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
 import com.cs6238.project2.s2dr.server.app.objects.SecurityFlag;
@@ -39,14 +41,17 @@ public class RestEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestEndpoint.class);
 
+    private final CurrentUser currentUser;
     private final DocumentService documentService;
     private final LoginService loginService;
 
     @Inject
     RestEndpoint(
+            CurrentUser currentUser,
             DocumentService documentService,
             LoginService loginService) {
 
+        this.currentUser = currentUser;
         this.documentService = documentService;
         this.loginService = loginService;
     }
@@ -79,13 +84,21 @@ public class RestEndpoint {
             @FormDataParam("securityFlag") Set<SecurityFlag> securityFlags)
             throws SQLException, FileNotFoundException, URISyntaxException, UnexpectedQueryResultsException {
 
-        LOG.info("Uploading new document named: {}", documentName);
+        LOG.info("User \'{}\" requesting to check-in document \"{}\"", currentUser.getUserName(), documentName);
 
-        documentService.uploadDocument(document, documentName, securityFlags);
+        try {
+            documentService.uploadDocument(document, documentName, securityFlags);
+        } catch (UserLacksPermissionException e) {
+            // return a 401
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(e.getMessage())
+                    .build();
+        }
 
         LOG.info("Successfully uploaded document");
 
-        // return HTTP 201 with URI to the created resource
+        // return HTTP 201 with URI to the resource
         return Response
                 .created(new URI("/s2dr/document/" + documentName))
                 .build();
@@ -97,7 +110,7 @@ public class RestEndpoint {
     public Response downloadDocument(@PathParam("documentName") String documentName)
             throws SQLException, UnexpectedQueryResultsException {
         
-        LOG.info("Downloading document: {}", documentName);
+        LOG.info("User \"{}\" requesting to check-out document \"{}\"", currentUser.getUserName(), documentName);
 
         DocumentDownload download;
         try {
@@ -106,6 +119,12 @@ public class RestEndpoint {
             // return a 404
             return Response
                     .status(Response.Status.NOT_FOUND)
+                    .build();
+        } catch (UserLacksPermissionException e) {
+            // return a 401
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(e.getMessage())
                     .build();
         }
 
@@ -141,8 +160,15 @@ public class RestEndpoint {
     public Response deleteDocument(@PathParam("documentName") String documentName)
             throws SQLException, NoQueryResultsException {
 
-        LOG.info("Received request to delete document: {}", documentName);
-        documentService.deleteDocument(documentName);
+        LOG.info("User \"{}\" is requesting to delete document \"{}\"", currentUser.getUserName(), documentName);
+        try {
+            documentService.deleteDocument(documentName);
+        } catch (UserLacksPermissionException e) {
+            // return a 401 if the user doesn't have permission
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(e.getMessage())
+                    .build();
+        }
 
         // return 200
         return Response.ok().build();
@@ -152,6 +178,7 @@ public class RestEndpoint {
     @Path("/logout")
     @Produces(MediaType.APPLICATION_JSON)
     public Response logout() {
+        LOG.info("User \"{}\" now logging out", currentUser.getUserName());
         Subject currentUser = SecurityUtils.getSubject();
         currentUser.logout();
 
