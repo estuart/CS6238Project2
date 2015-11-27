@@ -30,11 +30,10 @@ CREATE TABLE s2dr.DocumentPermissions
   documentName VARCHAR (255) NOT NULL,
   userId INT NOT NULL,
   permission VARCHAR (5) NOT NULL,
+  CONSTRAINT check_permission CHECK (permission IN ('READ', 'WRITE', 'BOTH', 'OWNER')),
   timeLimit TIMESTAMP,
   canPropogate VARCHAR (5) NOT NULL,
-  FOREIGN KEY (documentName) REFERENCES s2dr.Documents(documentName),
-  FOREIGN KEY (userId) REFERENCES s2dr.Users(userId)
+  CONSTRAINT check_bool CHECK (canPropogate IN ('TRUE', 'FALSE')),
+  FOREIGN KEY (documentName) REFERENCES s2dr.Documents(documentName)
 );
--- TODO constrain DocumentPermissions.permission to be only "READ", "WRITE", "BOTH", or "OWNER"
--- TODO constrain DocumentPermissions.canPropogate to be only "Y" or "N"
 
