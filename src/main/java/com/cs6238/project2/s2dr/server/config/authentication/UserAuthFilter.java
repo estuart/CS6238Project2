@@ -26,19 +26,8 @@ public class UserAuthFilter extends AuthenticatingFilter {
 
     @Override
     protected boolean isAccessAllowed(ServletRequest request, ServletResponse response, Object mappedValue) {
-        LOG.info("Checking if access allowed");
-
         Subject currentUser = SecurityUtils.getSubject();
-
-        boolean isAllowed = currentUser.isAuthenticated();
-
-        if (isAllowed) {
-            LOG.info("Access allowed for subject {}", currentUser);
-        } else {
-            LOG.info("Access not allowed for subject {}", currentUser);
-        }
-
-        return isAllowed;
+        return currentUser.isAuthenticated();
     }
 
     @Override
