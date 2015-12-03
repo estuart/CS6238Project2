@@ -18,7 +18,8 @@ CREATE TABLE s2dr.Users
 CREATE TABLE s2dr.Documents
 (
   documentName VARCHAR (255) NOT NULL,
-  contents CLOB NOT NULL,
+  contents BLOB NOT NULL,
+  encryptionKey BLOB,
   PRIMARY KEY (documentName)
 );
 

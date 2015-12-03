@@ -8,13 +8,18 @@ import com.cs6238.project2.s2dr.server.app.objects.CurrentUser;
 import com.cs6238.project2.s2dr.server.app.objects.DelegatePermissionParams;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentDownload;
 import com.cs6238.project2.s2dr.server.app.objects.DocumentPermission;
+import com.cs6238.project2.s2dr.server.app.objects.EncryptedDocument;
 import com.cs6238.project2.s2dr.server.app.objects.SecurityFlag;
+import com.google.common.io.Files;
+import org.apache.shiro.util.ByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.Optional;
@@ -26,28 +31,73 @@ public class DocumentService {
 
     private final CurrentUser currentUser;
     private final DocumentDao documentDao;
+    private final EncryptionService encryptionService;
 
     @Inject
     public DocumentService(
             CurrentUser currentUser,
-            DocumentDao documentDao) {
+            DocumentDao documentDao,
+            EncryptionService encryptionService) {
 
         this.currentUser = currentUser;
         this.documentDao = documentDao;
+        this.encryptionService = encryptionService;
     }
 
     public void uploadDocument(File document, String documentName, Set<SecurityFlag> securityFlags)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException, UserLacksPermissionException {
 
-        if (!documentDao.documentExists(documentName)) {
-            LOG.info("Uploading new document \"{}\"", documentName);
-            documentDao.uploadDocument(document, documentName);
+        ByteSource documentContents;
+        Optional<byte[]> encryptionKey;
+
+        if (securityFlags.contains(SecurityFlag.CONFIDENTIALITY)) {
+
+            // if the upload's security flag is set to `CONFIDENTIALITY`, then the file has to be encrypted
+            // before it is written to the database
+
+            LOG.info("CONFIDENTIALITY was selected for the document \"{}\" check-in. Encrypting the file before write",
+                    documentName);
+
+            EncryptedDocument encryptedDocument = encryptionService.encryptDocument(document);
+
+            // use the encrypted contents and the encrypted encryption key for write
+            documentContents = encryptedDocument.getEncryptedDocument();
+            encryptionKey = Optional.of(encryptedDocument.getEncryptedAesKey().getBytes());
+
         } else {
+
+            // `CONFIDENTIALITY` was not selected for the file, so don't encrypt it
+
+            LOG.info("CONFIDENTIALITY was not selected for the document \"{}\" check-in. Writing unencrypted document",
+                    documentName);
+
+            try {
+                documentContents = ByteSource.Util.bytes(Files.toByteArray(document));
+            } catch (IOException e) {
+                LOG.error("Unable to read document bytes", e);
+                throw new RuntimeException(e);
+            }
+            encryptionKey = Optional.empty();
+        }
+
+        LOG.info("Checking if document \"{}\" already exists", documentName);
+        if (!documentDao.documentExists(documentName)) {
+
+            // the document does not already exist, so we add a new document
+            LOG.info("Uploading new document \"{}\"", documentName);
+            documentDao.uploadDocument(documentName, documentContents, encryptionKey);
+
+        } else {
+            LOG.info("Document \"{}\" already exists", documentName);
+
             // because the document already exists, we must check if the current user has WRITE permission
             // before allowing them to overwrite the document.
             LOG.info("Checking if user \"{}\" has proper permission to over-write document \"{}\"",
                     currentUser.getUserName(), documentName);
+
             if (!hasWritePermission(documentDao.getDocPermsForCurrentUser(documentName))) {
+                // the user does not have WRITE permission (or a dominating permission) so we throw an exception
+                // to prevent them from over-writing
 
                 LOG.info("User \"{}\" lacks WRITE permission for document \"{}\"",
                         currentUser.getUserName(), documentName);
@@ -56,27 +106,29 @@ public class DocumentService {
                         "You must have the correct permission before writing to an existing file");
             }
 
+            // since the exception wasn't thrown above, the user has permission to WRITE
             LOG.info("Overwriting document");
-            documentDao.overwriteDocument(documentName, document);
+            documentDao.overwriteDocument(documentName, documentContents, encryptionKey);
 
+            // clear out the existing security options for the document. They will be re-set with the new
+            // values below
             LOG.info("Removing current security flags");
             documentDao.clearDocumentSecurity(documentName);
         }
 
+        // add any security flags for the document
         for (SecurityFlag securityFlag: securityFlags) {
             LOG.info("Adding SecurityFlag \"{}\" to document \"{}\"", securityFlag, documentName);
             documentDao.setDocumentSecurity(documentName, securityFlag);
         }
 
-        String currentUserName = currentUser.getUserName();
-
-        // when a user uploads a new document, we add an "Owner" permission for that user.
-        LOG.info("Adding owner permission to document \"{}\" for user \"{}\"", documentName, currentUserName);
+        // lastly, when a user uploads a new document, we add an "Owner" permission for that user.
+        LOG.info("Adding owner permission to document \"{}\" for user \"{}\"", documentName, currentUser.getUserName());
         documentDao.delegatePermissions(
-                documentName, DelegatePermissionParams.getUploaderPermissions(currentUserName), Optional.empty());
+                documentName,
+                DelegatePermissionParams.getUploaderPermissions(currentUser.getUserName()),
+                Optional.empty());
 
-        documentDao.delegatePermissions(documentName,
-                new DelegatePermissionParams(DocumentPermission.READ, currentUserName, null, true), Optional.empty());
     }
 
     public DocumentDownload downloadDocument(String documentName) throws
@@ -92,7 +144,35 @@ public class DocumentService {
         }
 
         LOG.info("User \"{}\" checking-out document \"{}\"", currentUser.getUserName(), documentName);
-        return documentDao.downloadDocument(documentName);
+        DocumentDownload unalteredDownload = documentDao.downloadDocument(documentName);
+
+        // see if any security settings were configured for the document
+        LOG.info("Checking if any security flags are configured for \"{}\"", documentName);
+        EnumSet<SecurityFlag> documentSecurity = documentDao.getDocumentSecurity(documentName);
+        LOG.info("Found security flags {}", documentSecurity);
+
+        if (documentSecurity.contains(SecurityFlag.CONFIDENTIALITY)) {
+
+            // since CONFIDENTIALITY was chosen, me must first decrypt the file before returning it to the users
+
+            ByteSource encryptionKey = ByteSource.Util.bytes(unalteredDownload.getEncryptionKey().get());
+            ByteSource encryptedContents = ByteSource.Util.bytes(unalteredDownload.getContents());
+
+            EncryptedDocument document = new EncryptedDocument(
+                    encryptionKey,
+                    encryptedContents);
+
+            LOG.info("CONFIDENTIALITY was chosen for file \"{}\". Decrypting document before check-out", documentName);
+            ByteSource decryptedDocument = encryptionService.decryptDocument(document);
+
+            return DocumentDownload.builder()
+                    .setDocumentName(unalteredDownload.getDocumentName())
+                    .setContents(new ByteArrayInputStream(decryptedDocument.getBytes()))
+                    .build();
+        }
+
+        // since CONFIDENTIALITY was not chosen, we return the unaltered document
+        return unalteredDownload;
     }
 
     public void delegatePermissions(String documentName, DelegatePermissionParams delegateParams)
@@ -153,7 +233,7 @@ public class DocumentService {
 
         LOG.info("Checking if user \"{}\" has proper permission to delete document \"{}\"",
                 currentUser.getUserName(), documentName);
-        // TODO does WRITE permission allow for deletion too?
+
         if (!hasOwnerPermission(documentDao.getDocPermsForCurrentUser(documentName))) {
             LOG.info("User \"{}\" must have a valid OWNER permission to delete a document", currentUser.getUserName());
             throw new UserLacksPermissionException("Only a document's owner is allowed to delete a file.");

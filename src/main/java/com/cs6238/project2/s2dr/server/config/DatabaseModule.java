@@ -15,7 +15,6 @@ public class DatabaseModule extends AbstractModule {
     private static final String DATABASE_URL = "jdbc:h2:mem:s2dr;";
     private static final String H2_DRIVER = "org.h2.Driver";
     private static final String SQL_SCRIPT_NAME = "s2dr.sql";
-    private static final Logger LOG = LoggerFactory.getLogger(DatabaseModule.class);
 
     @Override
     protected void configure() {}

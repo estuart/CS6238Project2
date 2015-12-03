@@ -11,19 +11,19 @@ import com.cs6238.project2.s2dr.server.app.objects.DocumentPermission;
 import com.cs6238.project2.s2dr.server.app.objects.SecurityFlag;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.util.ByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -73,12 +73,12 @@ public class DocumentDao {
 
     }
 
-    public void uploadDocument(File document, String documentName)
+    public void uploadDocument(String documentName, ByteSource contents, Optional<byte[]> encryptionKey)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
 
         String query =
-                "INSERT INTO s2dr.Documents (documentName, contents)\n" +
-                "VALUES (?, ?)";
+                "INSERT INTO s2dr.Documents (documentName, contents, encryptionKey)\n" +
+                "VALUES (?, ?, ?)";
 
         LOG.debug("Query:\n{}", query);
 
@@ -87,7 +87,8 @@ public class DocumentDao {
             ps = conn.prepareStatement(query);
 
             ps.setString(1, documentName);
-            ps.setClob(2, new FileReader(document));
+            ps.setBytes(2, contents.getBytes());
+            ps.setBytes(3, encryptionKey.orElse(null)); // this is a nullable field
 
             ps.executeUpdate();
 
@@ -98,13 +99,14 @@ public class DocumentDao {
         }
     }
 
-    public void overwriteDocument(String documentName, File document)
+    public void overwriteDocument(String documentName, ByteSource contents, Optional<byte[]> encryptionKey)
             throws SQLException, FileNotFoundException {
 
         String query =
                 "UPDATE s2dr.Documents\n" +
-                "   SET contents = ?\n" +
-                " WHERE documentName = ?";
+                "   SET contents = (?),\n" +
+                "       encryptionKey = (?)\n" +
+                " WHERE documentName = (?)";
 
         LOG.debug("Query:\n{}", query);
 
@@ -112,8 +114,9 @@ public class DocumentDao {
         try {
             ps = conn.prepareCall(query);
 
-            ps.setClob(1, new FileReader(document));
-            ps.setString(2, documentName);
+            ps.setBytes(1, contents.getBytes());
+            ps.setBytes(2, encryptionKey.orElse(null)); // this is a nullable field
+            ps.setString(3, documentName);
 
             ps.executeUpdate();
         } finally {
@@ -151,19 +154,50 @@ public class DocumentDao {
         String query =
                 "DELETE\n" +
                 "  FROM s2dr.DocumentSecurity\n" +
-                " WHERE documentName = ?";
+                " WHERE documentName = (?)";
 
         LOG.debug("Query:\n{}", query);
 
         deleteByDocumentName(documentName, query);
     }
 
+    public EnumSet<SecurityFlag> getDocumentSecurity(String documentName) throws SQLException {
+
+        String query =
+                "SELECT securityFlag\n" +
+                "  FROM s2dr.DocumentSecurity\n" +
+                " WHERE documentName = (?)";
+
+        LOG.debug("Query:\n{}", query);
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(query);
+
+            ps.setString(1, documentName);
+
+            ResultSet rs = ps.executeQuery();
+
+            Set<SecurityFlag> flags = new HashSet<>();
+            while (rs.next()) {
+                flags.add(SecurityFlag.valueOf(rs.getString("securityFlag")));
+            }
+            return EnumSet.copyOf(flags);
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
+
     public DocumentDownload downloadDocument(String documentName)
             throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException {
         String query =
-                "SELECT *\n" +
-                "FROM s2dr.Documents\n" +
-                "WHERE documentName = ?";
+                "SELECT documentName,\n" +
+                "       contents,\n" +
+                "       encryptionKey\n" +
+                "  FROM s2dr.Documents\n" +
+                " WHERE documentName = ?";
 
         LOG.debug("Query:\n{}", query);
 
@@ -182,7 +216,8 @@ public class DocumentDao {
 
             DocumentDownload download = DocumentDownload.builder()
                     .setDocumentName(rs.getString("documentName"))
-                    .setContents(rs.getClob("contents").getAsciiStream())
+                    .setContents(rs.getBlob("contents").getBinaryStream())
+                    .setEncryptionKey(Optional.ofNullable(rs.getBytes("encryptionKey")))
                     .build();
 
             if (rs.next()) {

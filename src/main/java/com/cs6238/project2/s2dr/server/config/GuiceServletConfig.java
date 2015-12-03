@@ -3,10 +3,12 @@ package com.cs6238.project2.s2dr.server.config;
 import com.cs6238.project2.s2dr.server.app.DocumentService;
 import com.cs6238.project2.s2dr.server.app.LoginService;
 import com.cs6238.project2.s2dr.server.app.objects.CurrentUser;
+import com.cs6238.project2.s2dr.server.app.objects.ServerKeyPair;
 import com.cs6238.project2.s2dr.server.config.authentication.UserAuthShiroModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.Stage;
 import com.google.inject.servlet.GuiceServletContextListener;
@@ -18,12 +20,16 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class GuiceServletConfig extends GuiceServletContextListener {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DatabaseModule.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GuiceServletConfig.class);
 
     public static Injector injector;
     private ServletContext servletContext;
@@ -50,6 +56,7 @@ public class GuiceServletConfig extends GuiceServletContextListener {
                 },
                 new DatabaseModule(),
                 new H2ServerGuiceModule(),
+                new ServerKeyPairGuiceModule(),
                 new UserAuthShiroModule(servletContext));
 
         return injector;
@@ -93,6 +100,48 @@ public class GuiceServletConfig extends GuiceServletContextListener {
         @Override
         protected void configure() {
             bind(H2ServerRunner.class).in(Singleton.class);
+        }
+    }
+
+    static class ServerKeyPairGuiceModule extends AbstractModule {
+
+        private static final String DEFAULT_CERT_PASSWORD = "changeit";
+        private static final String KEYSTORE_FILE_PATH = "tomcat/conf/keystore.jks";
+        private static final String SERVER_ALIAS = "s2drServer";
+
+        @Override
+        protected void configure() {}
+
+        @Provides
+        @Singleton
+        private ServerKeyPair provideServerKeyPair() {
+            ServerKeyPair keyPair = null;
+            try {
+                KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+
+                java.io.FileInputStream fis = null;
+                try {
+                    fis = new java.io.FileInputStream(KEYSTORE_FILE_PATH);
+                    keyStore.load(fis, DEFAULT_CERT_PASSWORD.toCharArray());
+
+                    X509Certificate serverCert = (X509Certificate) keyStore.getCertificate(SERVER_ALIAS);
+
+                    PublicKey publicKey = serverCert.getPublicKey();
+                    PrivateKey privateKey = (PrivateKey) keyStore.getKey(
+                            SERVER_ALIAS, DEFAULT_CERT_PASSWORD.toCharArray());
+
+                    keyPair = new ServerKeyPair(publicKey, privateKey);
+                } finally {
+                    if (fis != null) {
+                        fis.close();
+                    }
+                }
+            } catch (Exception e) {
+                LOG.error("Error obtaining the server keypair", e);
+                throw new RuntimeException();
+            }
+
+            return keyPair;
         }
     }
 }
