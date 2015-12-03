@@ -16,6 +16,8 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
+import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 
 public class DocumentService {
@@ -71,11 +73,14 @@ public class DocumentService {
         // when a user uploads a new document, we add an "Owner" permission for that user.
         LOG.info("Adding owner permission to document \"{}\" for user \"{}\"", documentName, currentUserName);
         documentDao.delegatePermissions(
-                documentName, DelegatePermissionParams.getUploaderPermissions(currentUserName));
+                documentName, DelegatePermissionParams.getUploaderPermissions(currentUserName), Optional.empty());
+
+        documentDao.delegatePermissions(documentName,
+                new DelegatePermissionParams(DocumentPermission.READ, currentUserName, null, true), Optional.empty());
     }
 
-    public DocumentDownload downloadDocument(String documentName)
-            throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException, UserLacksPermissionException {
+    public DocumentDownload downloadDocument(String documentName) throws
+            SQLException, DocumentNotFoundException, UnexpectedQueryResultsException, UserLacksPermissionException {
 
         LOG.info("Checking if user \"{}\" has proper permission to check-out document \"{}\"",
                 currentUser.getUserName(), documentName);
@@ -90,10 +95,57 @@ public class DocumentService {
         return documentDao.downloadDocument(documentName);
     }
 
-    public void delegatePermissions(String documentName, DelegatePermissionParams delegateParams) throws SQLException {
+    public void delegatePermissions(String documentName, DelegatePermissionParams delegateParams)
+            throws SQLException, UserLacksPermissionException, NoQueryResultsException {
 
-        LOG.info("Delegating permission to file \"{}\": {}", documentName, delegateParams);
-        documentDao.delegatePermissions(documentName, delegateParams);
+        LOG.info("Checking if user \"{}\" can delegate permission \"{}\" to file \"{}\"",
+                currentUser.getUserName(), delegateParams.getPermission(), documentName);
+
+        // build the set of "valid permission" able to propagate the permission further
+        // for instance having the BOTH permission allows a user to propagate READ
+        EnumSet<DocumentPermission> validPermissions;
+        switch (delegateParams.getPermission()) {
+            case READ:
+                validPermissions = EnumSet.of(
+                        DocumentPermission.READ,
+                        DocumentPermission.BOTH,
+                        DocumentPermission.OWNER);
+                break;
+            case WRITE:
+                validPermissions = EnumSet.of(
+                        DocumentPermission.WRITE,
+                        DocumentPermission.BOTH,
+                        DocumentPermission.OWNER);
+                break;
+            case BOTH:
+                validPermissions = EnumSet.of(
+                        DocumentPermission.BOTH,
+                        DocumentPermission.OWNER);
+                break;
+            case OWNER:
+                validPermissions = EnumSet.of(DocumentPermission.OWNER);
+                break;
+            default:
+                throw new IllegalArgumentException(
+                        String.format("Was not expecting DocumentPermission %s", delegateParams.getPermission()));
+        }
+
+        if (!documentDao.userCanDelegate(documentName, validPermissions)) {
+            // if the user doesn't have the correct permission, *or* doesn't have the ability to propagate it
+            // further, then we don't allow them to go any further.
+            LOG.info("User \"{}\" cannot propagate \"{}\" further for document \"{}\".",
+                    currentUser.getUserName(), delegateParams.getPermission(), documentName);
+
+            throw new UserLacksPermissionException(
+                    "You do not possess the ability to further propogate the permission");
+        }
+
+        LOG.info("\"{}\" delegating \"{}\" to user \"{}\" for document \"{}\"",
+                currentUser.getUserName(), delegateParams.getPermission(), delegateParams.getUserName(), documentName);
+
+        Optional<Long> timeLimit = documentDao.getMaxDelegationTime(documentName, validPermissions);
+
+        documentDao.delegatePermissions(documentName, delegateParams, timeLimit);
     }
 
     public void deleteDocument(String documentName)

@@ -144,11 +144,19 @@ public class RestEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response delegate(@PathParam("documentName") String documentName,
-                             DelegatePermissionParams delegateParams) throws SQLException {
+                             DelegatePermissionParams delegateParams) throws SQLException, NoQueryResultsException {
 
         LOG.info("Delegating permissions: {}, for document: {}", delegateParams, documentName);
 
-        documentService.delegatePermissions(documentName, delegateParams);
+        try {
+            documentService.delegatePermissions(documentName, delegateParams);
+        } catch (UserLacksPermissionException e) {
+            // return a 401
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(e.getMessage())
+                    .build();
+        }
 
         // return 200
         return Response.ok().build();

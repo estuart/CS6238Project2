@@ -23,6 +23,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 
 public class DocumentDao {
@@ -44,9 +46,11 @@ public class DocumentDao {
     public boolean documentExists(String documentName) throws SQLException {
 
         String query =
-                "SELECT documentName" +
-                "  FROM s2dr.documents" +
-                " WHERE documentName = ?";
+                "SELECT documentName\n" +
+                "  FROM s2dr.documents\n" +
+                " WHERE documentName = ? ";
+
+        LOG.debug("Query:\n{}", query);
 
         PreparedStatement ps = null;
         try {
@@ -73,8 +77,10 @@ public class DocumentDao {
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
 
         String query =
-                "INSERT INTO s2dr.Documents (documentName, contents) " +
+                "INSERT INTO s2dr.Documents (documentName, contents)\n" +
                 "VALUES (?, ?)";
+
+        LOG.debug("Query:\n{}", query);
 
         PreparedStatement ps = null;
         try {
@@ -96,9 +102,11 @@ public class DocumentDao {
             throws SQLException, FileNotFoundException {
 
         String query =
-                "UPDATE s2dr.Documents" +
-                "   SET contents = ?" +
+                "UPDATE s2dr.Documents\n" +
+                "   SET contents = ?\n" +
                 " WHERE documentName = ?";
+
+        LOG.debug("Query:\n{}", query);
 
         PreparedStatement ps = null;
         try {
@@ -118,8 +126,10 @@ public class DocumentDao {
     public void setDocumentSecurity(String documentName, SecurityFlag securityFlag) throws SQLException {
 
         String query =
-                "INSERT INTO s2dr.DocumentSecurity (documentName, securityFlag)" +
+                "INSERT INTO s2dr.DocumentSecurity (documentName, securityFlag)\n" +
                 "VALUES (?, ?)";
+
+        LOG.debug("Query:\n{}", query);
 
         PreparedStatement ps = null;
         try {
@@ -139,9 +149,11 @@ public class DocumentDao {
     public void clearDocumentSecurity(String documentName) throws SQLException {
 
         String query =
-                "DELETE" +
-                "  FROM s2dr.DocumentSecurity" +
+                "DELETE\n" +
+                "  FROM s2dr.DocumentSecurity\n" +
                 " WHERE documentName = ?";
+
+        LOG.debug("Query:\n{}", query);
 
         deleteByDocumentName(documentName, query);
     }
@@ -149,9 +161,11 @@ public class DocumentDao {
     public DocumentDownload downloadDocument(String documentName)
             throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException {
         String query =
-                "SELECT * " +
-                "FROM s2dr.Documents " +
+                "SELECT *\n" +
+                "FROM s2dr.Documents\n" +
                 "WHERE documentName = ?";
+
+        LOG.debug("Query:\n{}", query);
 
         PreparedStatement ps = null;
         try {
@@ -186,27 +200,36 @@ public class DocumentDao {
         }
     }
 
-    public void delegatePermissions(String documentName, DelegatePermissionParams delegateParams) throws SQLException {
+    public void delegatePermissions(
+            String documentName, DelegatePermissionParams params, Optional<Long> maxTime) throws SQLException {
         String query =
-                "INSERT INTO s2dr.DocumentPermissions" +
-                "   (documentName, userName, permission, timeLimit, canPropogate)" +
+                "INSERT INTO s2dr.DocumentPermissions\n" +
+                "   (documentName, userName, permission, timeLimit, canPropogate)\n" +
                 "VALUES (?, ?, ?, ?, ?)";
+
+        LOG.debug("Query:\n{}", query);
 
         PreparedStatement ps = null;
         try {
             ps = conn.prepareStatement(query);
 
             ps.setString(1, documentName);
-            ps.setString(2, delegateParams.getUserName());
-            ps.setString(3, delegateParams.getPermission().toString());
+            ps.setString(2, params.getUserName());
+            ps.setString(3, params.getPermission().toString());
 
             Timestamp timeLimit = null;
-            if (delegateParams.getTimeLimitMillis().isPresent()) {
-                timeLimit = new Timestamp(System.currentTimeMillis() + delegateParams.getTimeLimitMillis().get());
+            // if neither maxTime nor params.timeLimitMillis is present, then we just just set
+            // null for the time limit
+            if (maxTime.isPresent() || params.getTimeLimitMillis().isPresent()) {
+                // maxTime takes precedence over the params.timeLimitMillis because params.timeLimitMillis
+                // is the value selected by the user, but maxTime is the value selected by the system,
+                // which may be less than what is selected by the user.
+                Long timeLimitMillis = maxTime.orElse(params.getTimeLimitMillis().orElse(null));
+                timeLimit = new Timestamp(System.currentTimeMillis() + timeLimitMillis);
             }
             ps.setTimestamp(4, timeLimit);
 
-            ps.setBoolean(5, delegateParams.getCanPropogate());
+            ps.setBoolean(5, params.getCanPropogate());
 
             ps.executeUpdate();
 
@@ -222,9 +245,12 @@ public class DocumentDao {
         Integer clobLength;
         //This query gets the length of the current clob
         String sizeQuery =
-                "SELECT * " +
-                "FROM s2dr.Documents " +
+                "SELECT *\n" +
+                "FROM s2dr.Documents\n" +
                 "WHERE documentName = (?)";
+
+        LOG.debug("Query:\n{}", sizeQuery);
+
         PreparedStatement ps1 = null;
         try {
             ps1 = conn.prepareStatement(sizeQuery);
@@ -246,9 +272,11 @@ public class DocumentDao {
         //Now that we know the clob length we insert a clob of zeros to overwrite it in memory
         String zeroClob = StringUtils.repeat("0", clobLength);
         String zeroQuery =
-                "UPDATE s2dr.Documents " +
-                "SET contents = (?) " +
+                "UPDATE s2dr.Documents\n" +
+                "SET contents = (?)\n" +
                 "WHERE documentName = (?)";
+
+        LOG.debug("Query:\n{}", zeroClob);
 
         PreparedStatement ps2 = null;
         try {
@@ -266,18 +294,22 @@ public class DocumentDao {
 
         //Finally we delete the document securely since the file content was overwritten with zeroes
         String query =
-                "DELETE " +
-                "FROM s2dr.Documents " +
+                "DELETE\n" +
+                "FROM s2dr.Documents\n" +
                 "WHERE documentName = (?)";
+
+        LOG.debug("Query:\n{}", query);
 
         deleteByDocumentName(documentName, query);
     }
 
     public void deleteAllDocumentPermissions(String documentName) throws SQLException {
         String query =
-                "DELETE" +
-                "  FROM s2dr.DocumentPermissions" +
-                " WHERE documentName = ?";
+                "DELETE\n" +
+                "  FROM s2dr.DocumentPermissions\n" +
+                " WHERE documentName = (?)";
+
+        LOG.debug("Query:\n{}", query);
 
         deleteByDocumentName(documentName, query);
     }
@@ -299,12 +331,14 @@ public class DocumentDao {
         ImmutableSet.Builder<DocumentPermission> permissionBuilder = ImmutableSet.builder();
 
         String query =
-                "SELECT permission" +
-                "  FROM s2dr.DocumentPermissions" +
-                " WHERE documentName = (?)" +
-                "   AND userName = (?)" +
-                "   AND timeLimit IS NULL" +
-                "    OR timeLimit > (?)";
+                "SELECT permission\n" +
+                "  FROM s2dr.DocumentPermissions\n" +
+                " WHERE (documentName = (?))\n" +
+                "   AND (userName = (?))\n" +
+                "   AND (timeLimit IS NULL)\n" +
+                "    OR (timeLimit > (?))";
+
+        LOG.debug("Query:\n{}", query);
 
         PreparedStatement ps = null;
         try {
@@ -329,5 +363,119 @@ public class DocumentDao {
                 currentUser.getUserName(), documentName, permissions);
 
         return permissions;
+    }
+
+    public boolean userCanDelegate(String documentName, EnumSet<DocumentPermission> permissions)
+            throws SQLException {
+
+        LOG.debug("Checking for \"{}\"", permissions);
+
+        String query =
+                "SELECT permission\n" +
+                "  FROM s2dr.DocumentPermissions\n" +
+                appendPermissionInClause(permissions.size()) +
+                "   AND documentName = (?)\n" +
+                "   AND userName = (?)\n" +
+                "   AND canPropogate = 'TRUE'\n" +
+                "   AND (timeLimit IS NULL\n" +
+                "          OR timeLimit > NOW())";
+
+        LOG.debug("Query:\n{}", query);
+
+        PreparedStatement ps = null;
+        try {
+            int bindIndex = 0;
+            ps = conn.prepareStatement(query);
+
+            bindIndex = bindQueryPermissions(ps, permissions, bindIndex);
+
+            ps.setString(++bindIndex, documentName);
+            ps.setString(++bindIndex, currentUser.getUserName());
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return true;
+            }
+            return false;
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
+
+
+    public Optional<Long> getMaxDelegationTime(String documentName, EnumSet<DocumentPermission> permissions)
+            throws SQLException, NoQueryResultsException {
+
+        String query =
+                "  SELECT timeLimit\n" +
+                "    FROM s2dr.DocumentPermissions\n" +
+                appendPermissionInClause(permissions.size()) +
+                "     AND documentName = (?)\n" +
+                "     AND userName = (?)\n" +
+                "     AND (timeLimit > NOW()\n" +
+                "            OR timeLimit IS NULL)\n" +
+                "ORDER BY timeLimit ASC";
+
+        LOG.debug("Query:\n{}", query);
+
+        PreparedStatement ps = null;
+        try {
+            int bindIndex = 0;
+            ps = conn.prepareStatement(query);
+
+            bindIndex = bindQueryPermissions(ps, permissions, bindIndex);
+
+            ps.setString(++bindIndex, documentName);
+            ps.setString(++bindIndex, currentUser.getUserName());
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                Timestamp timeLimit = rs.getTimestamp("timeLimit");
+
+                if (timeLimit == null) {
+                    return Optional.empty();
+                }
+                return Optional.of(timeLimit.getTime() - System.currentTimeMillis());
+            }
+
+            throw new NoQueryResultsException("Expected at least one result from the query");
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
+
+    private String appendPermissionInClause(int permissionsLength) {
+        // crappy approach but I don't want to put more effort into a school project
+        if (permissionsLength == 0) {
+            throw new IllegalArgumentException("Must provide at least one permission to check");
+        }
+
+        if (permissionsLength == 1) {
+            return "   WHERE permission IN (?)\n";
+        }
+
+        if (permissionsLength == 2) {
+            return "   WHERE permission IN (?, ?)\n";
+        }
+
+        if (permissionsLength == 3) {
+            return "   WHERE permission IN (?, ?, ?)\n";
+        }
+
+        throw new IllegalArgumentException("This method is set up to handle no more than three permissions");
+    }
+
+    private int bindQueryPermissions(
+            PreparedStatement ps, EnumSet<DocumentPermission> permissions, int bindIndex) throws SQLException {
+
+        for (DocumentPermission permission: permissions) {
+            ps.setString(++bindIndex, permission.name());
+        }
+        return bindIndex;
     }
 }
