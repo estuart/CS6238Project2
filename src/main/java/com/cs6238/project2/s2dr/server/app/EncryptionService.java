@@ -13,12 +13,17 @@ import org.slf4j.LoggerFactory;
 import javax.crypto.Cipher;
 import javax.inject.Inject;
 import java.io.File;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.spec.RSAPublicKeySpec;
 
 public class EncryptionService {
 
     private static final Logger LOG = LoggerFactory.getLogger(EncryptionService.class);
 
     private static final String RSA_ALGORITHM = "RSA";
+    private static final String SIGNING_ALGORITHM = "SHA256withRSA";
     private static final int AES_KEY_BYTE_SIZE = 16;
 
     private final AesCipherService aesCipher;
@@ -75,6 +80,25 @@ public class EncryptionService {
 
         } catch (Exception e) {
             LOG.error("Error decrypting file", e);
+            throw new RuntimeException("Internal Server Error");
+        }
+    }
+
+    public boolean canVerifySignature(
+            ByteSource contents, ByteSource signatureBytes, RSAPublicKeySpec uploaderPubKeySpec) {
+
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance(RSA_ALGORITHM);
+            PublicKey publicKey = keyFactory.generatePublic(uploaderPubKeySpec);
+
+            LOG.info("Verifying contents against the signature using {}", SIGNING_ALGORITHM);
+            Signature signature = Signature.getInstance(SIGNING_ALGORITHM);
+            signature.initVerify(publicKey);
+            signature.update(contents.getBytes());
+
+            return signature.verify(signatureBytes.getBytes());
+        } catch (Exception e) {
+            LOG.error("Error verifying file", e);
             throw new RuntimeException("Internal Server Error");
         }
     }

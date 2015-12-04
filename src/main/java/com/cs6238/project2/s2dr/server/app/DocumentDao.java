@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
+import java.math.BigInteger;
+import java.security.spec.RSAPublicKeySpec;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -73,12 +75,15 @@ public class DocumentDao {
 
     }
 
-    public void uploadDocument(String documentName, ByteSource contents, Optional<byte[]> encryptionKey)
+    public void uploadDocument(String documentName,
+                               ByteSource contents,
+                               Optional<byte[]> encryptionKey,
+                               Optional<byte[]> signature)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException {
 
         String query =
-                "INSERT INTO s2dr.Documents (documentName, contents, encryptionKey)\n" +
-                "VALUES (?, ?, ?)";
+                "INSERT INTO s2dr.Documents (documentName, contents, uploadUser, encryptionKey, signature)\n" +
+                "VALUES (?, ?, ?, ?, ?)";
 
         LOG.debug("Query:\n{}", query);
 
@@ -88,7 +93,9 @@ public class DocumentDao {
 
             ps.setString(1, documentName);
             ps.setBytes(2, contents.getBytes());
-            ps.setBytes(3, encryptionKey.orElse(null)); // this is a nullable field
+            ps.setString(3, currentUser.getUserName());
+            ps.setBytes(4, encryptionKey.orElse(null)); // this is a nullable field
+            ps.setBytes(5, signature.orElse(null)); // nullable field
 
             ps.executeUpdate();
 
@@ -99,13 +106,17 @@ public class DocumentDao {
         }
     }
 
-    public void overwriteDocument(String documentName, ByteSource contents, Optional<byte[]> encryptionKey)
-            throws SQLException, FileNotFoundException {
+    public void overwriteDocument(String documentName,
+                                  ByteSource contents,
+                                  Optional<byte[]> encryptionKey,
+                                  Optional<byte[]> signature) throws SQLException, FileNotFoundException {
 
         String query =
                 "UPDATE s2dr.Documents\n" +
                 "   SET contents = (?),\n" +
-                "       encryptionKey = (?)\n" +
+                "       uploadUser = (?),\n" +
+                "       encryptionKey = (?),\n" +
+                "       signature = (?)\n" +
                 " WHERE documentName = (?)";
 
         LOG.debug("Query:\n{}", query);
@@ -115,8 +126,10 @@ public class DocumentDao {
             ps = conn.prepareCall(query);
 
             ps.setBytes(1, contents.getBytes());
-            ps.setBytes(2, encryptionKey.orElse(null)); // this is a nullable field
-            ps.setString(3, documentName);
+            ps.setString(2, currentUser.getUserName());
+            ps.setBytes(3, encryptionKey.orElse(null)); // this is a nullable field
+            ps.setBytes(4, signature.orElse(null)); // nullable field
+            ps.setString(5, documentName);
 
             ps.executeUpdate();
         } finally {
@@ -194,8 +207,10 @@ public class DocumentDao {
             throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException {
         String query =
                 "SELECT documentName,\n" +
+                "       uploadUser,\n" +
                 "       contents,\n" +
-                "       encryptionKey\n" +
+                "       encryptionKey,\n" +
+                "       signature\n" +
                 "  FROM s2dr.Documents\n" +
                 " WHERE documentName = ?";
 
@@ -216,8 +231,10 @@ public class DocumentDao {
 
             DocumentDownload download = DocumentDownload.builder()
                     .setDocumentName(rs.getString("documentName"))
+                    .setUploadUserName(rs.getString("uploadUser"))
                     .setContents(rs.getBlob("contents").getBinaryStream())
                     .setEncryptionKey(Optional.ofNullable(rs.getBytes("encryptionKey")))
+                    .setSignature(Optional.ofNullable(rs.getBytes("signature")))
                     .build();
 
             if (rs.next()) {
@@ -512,5 +529,39 @@ public class DocumentDao {
             ps.setString(++bindIndex, permission.name());
         }
         return bindIndex;
+    }
+
+    // This method really doesn't belong in this DAO, but I don't feel like adding another
+    // DAO just for this query since this is only a school project
+    public RSAPublicKeySpec getUserPubKeySpec(String userName)
+            throws SQLException, NoQueryResultsException {
+
+        String query =
+                "SELECT pubKeyModulus,\n" +
+                "       pubKeyExponent\n" +
+                "  FROM s2dr.Users" +
+                " WHERE userName = (?)";
+
+        PreparedStatement ps = null;
+
+        try {
+            ps = conn.prepareStatement(query);
+
+            ps.setString(1, userName);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                throw new NoQueryResultsException(String.format("Could not find public key info for %s", userName));
+            }
+
+            return new RSAPublicKeySpec(
+                    new BigInteger(rs.getBytes("pubKeyModulus")),
+                    new BigInteger(rs.getBytes("pubKeyExponent")));
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
     }
 }

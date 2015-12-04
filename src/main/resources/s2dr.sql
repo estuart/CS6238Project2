@@ -12,6 +12,8 @@ CREATE TABLE s2dr.Users
 (
   userName VARCHAR (255) NOT NULL,
   signature BLOB NOT NULL,
+  pubKeyModulus BLOB NOT NULL,
+  pubKeyExponent BLOB NOT NULL,
   PRIMARY KEY (userName)
 );
 
@@ -19,8 +21,11 @@ CREATE TABLE s2dr.Documents
 (
   documentName VARCHAR (255) NOT NULL,
   contents BLOB NOT NULL,
+  uploadUser VARCHAR(255) NOT NULL,
   encryptionKey BLOB,
-  PRIMARY KEY (documentName)
+  signature BLOB,
+  PRIMARY KEY (documentName),
+  FOREIGN KEY (uploadUser) REFERENCES s2dr.Users(userName)
 );
 
 CREATE TABLE s2dr.DocumentSecurity

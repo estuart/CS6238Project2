@@ -1,6 +1,7 @@
 package com.cs6238.project2.s2dr.server.app;
 
 import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.app.exceptions.DocumentIntegrityVerificationException;
 import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UserLacksPermissionException;
@@ -30,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
@@ -81,13 +83,14 @@ public class RestEndpoint {
     public Response uploadDocument(
             @FormDataParam("document") File document,
             @FormDataParam("documentName") String documentName,
-            @FormDataParam("securityFlag") Set<SecurityFlag> securityFlags)
+            @FormDataParam("securityFlag") Set<SecurityFlag> securityFlags,
+            @FormDataParam("signature") InputStream signature)
             throws SQLException, FileNotFoundException, URISyntaxException, UnexpectedQueryResultsException {
 
         LOG.info("User \'{}\" requesting to check-in document \"{}\"", currentUser.getUserName(), documentName);
 
         try {
-            documentService.uploadDocument(document, documentName, securityFlags);
+            documentService.uploadDocument(document, documentName, securityFlags, signature);
         } catch (UserLacksPermissionException e) {
             // return a 401
             return Response
@@ -125,6 +128,11 @@ public class RestEndpoint {
             return Response
                     .status(Response.Status.UNAUTHORIZED)
                     .entity(e.getMessage())
+                    .build();
+        } catch (DocumentIntegrityVerificationException e) {
+            return Response
+                    .status(Response.Status.NOT_FOUND) // this probably isn't the correct status code
+                    .entity("Unable to verify the integrity of the document")
                     .build();
         }
 
