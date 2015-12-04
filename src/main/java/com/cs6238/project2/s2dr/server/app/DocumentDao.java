@@ -252,8 +252,11 @@ public class DocumentDao {
         }
     }
 
-    public void delegatePermissions(
-            String documentName, DelegatePermissionParams params, Optional<Long> maxTime) throws SQLException {
+    public void delegateNewPermission(
+            String documentName,
+            DocumentPermission permission,
+            DelegatePermissionParams params,
+            Optional<Long> maxTime) throws SQLException {
         String query =
                 "INSERT INTO s2dr.DocumentPermissions\n" +
                 "   (documentName, userName, permission, timeLimit, canPropogate)\n" +
@@ -267,7 +270,7 @@ public class DocumentDao {
 
             ps.setString(1, documentName);
             ps.setString(2, params.getUserName());
-            ps.setString(3, params.getPermission().toString());
+            ps.setString(3, permission.name());
 
             Timestamp timeLimit = null;
             // if neither maxTime nor params.timeLimitMillis is present, then we just just set
@@ -285,6 +288,49 @@ public class DocumentDao {
 
             ps.executeUpdate();
 
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
+
+    public void updateDocumentPermission(
+            String documentName,
+            DocumentPermission permission,
+            DelegatePermissionParams delegationParams,
+            Optional<Long> maxTime) throws SQLException {
+
+        String query =
+                "UPDATE s2dr.DocumentPermissions\n" +
+                "   SET timeLimit = (?),\n" +
+                "       canPropogate = (?)\n" +
+                " WHERE documentName = (?)\n" +
+                "   AND userName = (?)\n" +
+                "   AND permission = (?)";
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(query);
+
+            Timestamp timeLimit = null;
+            // if neither maxTime nor params.timeLimitMillis is present, then we just just set
+            // null for the time limit
+            if (maxTime.isPresent() || delegationParams.getTimeLimitMillis().isPresent()) {
+                // maxTime takes precedence over the params.timeLimitMillis because params.timeLimitMillis
+                // is the value selected by the user, but maxTime is the value selected by the system,
+                // which may be less than what is selected by the user.
+                Long timeLimitMillis = maxTime.orElse(delegationParams.getTimeLimitMillis().orElse(null));
+                timeLimit = new Timestamp(System.currentTimeMillis() + timeLimitMillis);
+            }
+            ps.setTimestamp(1, timeLimit);
+
+            ps.setBoolean(2, delegationParams.getCanPropogate());
+            ps.setString(3, documentName);
+            ps.setString(4, delegationParams.getUserName());
+            ps.setString(5, permission.name());
+
+            ps.executeUpdate();
         } finally {
             if (ps != null) {
                 ps.close();
@@ -389,7 +435,7 @@ public class DocumentDao {
                 "   AND (userName = (?)\n" +
                 "          OR userName = 'ALL')\n" +
                 "   AND (timeLimit IS NULL\n" +
-                "          OR timeLimit > (?))";
+                "          OR timeLimit > NOW())";
 
         LOG.debug("Query:\n{}", query);
 
@@ -399,7 +445,6 @@ public class DocumentDao {
 
             ps.setString(1, documentName);
             ps.setString(2, currentUser.getUserName());
-            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -416,6 +461,39 @@ public class DocumentDao {
                 currentUser.getUserName(), documentName, permissions);
 
         return permissions;
+    }
+
+    public boolean userHasPermission(String documentName, String userName, DocumentPermission documentPermission)
+            throws SQLException {
+
+        String query =
+                "SELECT permission\n" +
+                "  FROM s2dr.DocumentPermissions\n" +
+                " WHERE documentName = (?)\n" +
+                "   AND userName = (?)\n" +
+                "   AND permission = (?)\n" +
+                "   AND (timeLimit IS NULL\n" +
+                "          OR timeLimit > NOW())";
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(query);
+
+            ps.setString(1, documentName);
+            ps.setString(2, userName);
+            ps.setString(3, documentPermission.name());
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return true;
+            }
+            return false;
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+        }
     }
 
     public boolean userCanDelegate(String documentName, EnumSet<DocumentPermission> permissions)

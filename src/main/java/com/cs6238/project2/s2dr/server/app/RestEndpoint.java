@@ -154,8 +154,6 @@ public class RestEndpoint {
     public Response delegate(@PathParam("documentName") String documentName,
                              DelegatePermissionParams delegateParams) throws SQLException, NoQueryResultsException {
 
-        LOG.info("Delegating permissions: {}, for document: {}", delegateParams, documentName);
-
         try {
             documentService.delegatePermissions(documentName, delegateParams);
         } catch (UserLacksPermissionException e) {
