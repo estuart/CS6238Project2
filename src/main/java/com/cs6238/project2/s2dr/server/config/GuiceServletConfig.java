@@ -105,6 +105,7 @@ public class GuiceServletConfig extends GuiceServletContextListener {
 
     static class ServerKeyPairGuiceModule extends AbstractModule {
 
+        // in a real system we would not hardcode the password, but it's only a school project
         private static final String DEFAULT_CERT_PASSWORD = "changeit";
         private static final String KEYSTORE_FILE_PATH = "tomcat/conf/keystore.jks";
         private static final String SERVER_ALIAS = "s2drServer";
