@@ -1,10 +1,3 @@
-/*
- * This is the script that sets up our H2 in-memory database. Since the database is
- * stored in memory per servlet "instance", any data that is added will not persist
- * between sessions. As a result, anything that we want to be truly persistent across
- * servlet contexts and machines must be manually added in this file. This includes
- * the schema as well as any data we want stored.
- */
 CREATE SCHEMA s2dr;
 
 -- Table that will hold "Users" of the system
@@ -47,8 +40,9 @@ CREATE TABLE s2dr.DocumentPermissions
   canPropogate VARCHAR (5) NOT NULL,
   CONSTRAINT check_bool CHECK (canPropogate IN ('TRUE', 'FALSE')),
   FOREIGN KEY (documentName) REFERENCES s2dr.Documents(documentName)
-  -- we cannot set FOREIGN KEY(documentName, userName, permission) because we don't
-    -- delete permissions that have expired based on time
+  -- we cannot set PRIMARY KEY(documentName, userName, permission) because we do not
+    -- delete permissions that have expired based on time. These permissions aren't
+    -- deleted because we ignore them in the permission SELECT query
   -- we cannot have a foreign key for Users.userName because we allow "ALL"
 );
 
