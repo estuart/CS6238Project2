@@ -1,14 +1,17 @@
 package com.cs6238.project2.s2dr.server.app.objects;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 public class DelegatePermissionParams {
 
-    private DocumentPermission permission;
+    private Set<DocumentPermission> permissions;
     private String userName;
     private Long timeLimitMillis;
     private boolean canPropogate;
@@ -18,19 +21,19 @@ public class DelegatePermissionParams {
     public DelegatePermissionParams() {}
 
     public DelegatePermissionParams(
-            DocumentPermission permission,
+            Set<DocumentPermission> permissions,
             String userName,
             Long timeLimitMillis,
             boolean canPropogate) {
 
-        this.permission = permission;
+        this.permissions = permissions;
         this.userName = userName;
         this.timeLimitMillis = timeLimitMillis;
         this.canPropogate = canPropogate;
     }
 
-    public DocumentPermission getPermission() {
-        return permission;
+    public EnumSet<DocumentPermission> getPermissions() {
+        return EnumSet.copyOf(permissions);
     }
 
     public String getUserName() {
@@ -47,7 +50,7 @@ public class DelegatePermissionParams {
 
     public static DelegatePermissionParams getUploaderPermissions(String userName) {
         return new DelegatePermissionParams(
-                DocumentPermission.OWNER,
+                ImmutableSet.of(DocumentPermission.OWNER),
                 userName,
                 null,
                 true);

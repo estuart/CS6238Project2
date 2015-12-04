@@ -42,10 +42,13 @@ CREATE TABLE s2dr.DocumentPermissions
   documentName VARCHAR (255) NOT NULL,
   userName VARCHAR(255) NOT NULL,
   permission VARCHAR (5) NOT NULL,
-  CONSTRAINT check_permission CHECK (permission IN ('READ', 'WRITE', 'BOTH', 'OWNER')),
+  CONSTRAINT check_permission CHECK (permission IN ('READ', 'WRITE', 'OWNER')),
   timeLimit TIMESTAMP,
   canPropogate VARCHAR (5) NOT NULL,
   CONSTRAINT check_bool CHECK (canPropogate IN ('TRUE', 'FALSE')),
   FOREIGN KEY (documentName) REFERENCES s2dr.Documents(documentName)
+  -- we cannot set FOREIGN KEY(documentName, userName, permission) because we don't
+    -- delete permissions that have expired based on time
+  -- we cannot have a foreign key for Users.userName because we allow "ALL"
 );
 

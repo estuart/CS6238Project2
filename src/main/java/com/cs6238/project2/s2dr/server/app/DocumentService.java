@@ -137,8 +137,9 @@ public class DocumentService {
 
         // lastly, when a user uploads a new document, we add an "Owner" permission for that user.
         LOG.info("Adding owner permission to document \"{}\" for user \"{}\"", documentName, currentUser.getUserName());
-        documentDao.delegatePermissions(
+        documentDao.delegateNewPermission(
                 documentName,
+                DocumentPermission.OWNER,
                 DelegatePermissionParams.getUploaderPermissions(currentUser.getUserName()),
                 Optional.empty());
 
@@ -225,31 +226,34 @@ public class DocumentService {
         return returnValue;
     }
 
-    public void delegatePermissions(String documentName, DelegatePermissionParams delegateParams)
+    public void delegatePermissions(String documentName, DelegatePermissionParams delegationParams)
+            throws SQLException, UserLacksPermissionException, NoQueryResultsException {
+
+        for (DocumentPermission permission: delegationParams.getPermissions()) {
+            delegateSinglePermission(documentName, permission, delegationParams);
+        }
+    }
+
+    private void delegateSinglePermission(String documentName,
+                                          DocumentPermission permission,
+                                          DelegatePermissionParams delegationParams)
             throws SQLException, UserLacksPermissionException, NoQueryResultsException {
 
         LOG.info("Checking if user \"{}\" can delegate permission \"{}\" to file \"{}\"",
-                currentUser.getUserName(), delegateParams.getPermission(), documentName);
+                currentUser.getUserName(), permission, documentName);
 
         // build the set of "valid permission" able to propagate the permission further
         // for instance having the BOTH permission allows a user to propagate READ
         EnumSet<DocumentPermission> validPermissions;
-        switch (delegateParams.getPermission()) {
+        switch (permission) {
             case READ:
                 validPermissions = EnumSet.of(
                         DocumentPermission.READ,
-                        DocumentPermission.BOTH,
                         DocumentPermission.OWNER);
                 break;
             case WRITE:
                 validPermissions = EnumSet.of(
                         DocumentPermission.WRITE,
-                        DocumentPermission.BOTH,
-                        DocumentPermission.OWNER);
-                break;
-            case BOTH:
-                validPermissions = EnumSet.of(
-                        DocumentPermission.BOTH,
                         DocumentPermission.OWNER);
                 break;
             case OWNER:
@@ -257,25 +261,34 @@ public class DocumentService {
                 break;
             default:
                 throw new IllegalArgumentException(
-                        String.format("Was not expecting DocumentPermission %s", delegateParams.getPermission()));
+                        String.format("Was not expecting DocumentPermission %s", permission));
         }
 
         if (!documentDao.userCanDelegate(documentName, validPermissions)) {
             // if the user doesn't have the correct permission, *or* doesn't have the ability to propagate it
             // further, then we don't allow them to go any further.
             LOG.info("User \"{}\" cannot propagate \"{}\" further for document \"{}\".",
-                    currentUser.getUserName(), delegateParams.getPermission(), documentName);
+                    currentUser.getUserName(), permission, documentName);
 
             throw new UserLacksPermissionException(
-                    "You do not possess the ability to further propogate the permission");
+                    "You do not possess the ability to further propagate the permission");
         }
 
-        LOG.info("\"{}\" delegating \"{}\" to user \"{}\" for document \"{}\"",
-                currentUser.getUserName(), delegateParams.getPermission(), delegateParams.getUserName(), documentName);
-
+        // find the max delegation time (depends on the delegating user's time limit)
         Optional<Long> timeLimit = documentDao.getMaxDelegationTime(documentName, validPermissions);
 
-        documentDao.delegatePermissions(documentName, delegateParams, timeLimit);
+        if (documentDao.userHasPermission(documentName, delegationParams.getUserName(), permission)) {
+            // the user already has the permission, so it should be overridden
+            LOG.info("\"{}\" already has a valid {} permission.", delegationParams.getUserName(), permission);
+            LOG.info("Overriding current {} permission for \"{}\"", permission, delegationParams.getUserName());
+
+            documentDao.updateDocumentPermission(documentName, permission, delegationParams, timeLimit);
+        } else {
+            LOG.info("Delegating \"{}\" to user \"{}\" for document \"{}\"",
+                    permission, delegationParams.getUserName(), documentName);
+
+            documentDao.delegateNewPermission(documentName, permission, delegationParams, timeLimit);
+        }
     }
 
     public void deleteDocument(String documentName)
@@ -304,13 +317,11 @@ public class DocumentService {
 
     private boolean hasReadPermission(Set<DocumentPermission> permissions) {
         return permissions.contains(DocumentPermission.READ)
-                || permissions.contains(DocumentPermission.BOTH)
                 || permissions.contains(DocumentPermission.OWNER);
     }
 
     private boolean hasWritePermission(Set<DocumentPermission> permissions) {
         return permissions.contains(DocumentPermission.WRITE)
-                || permissions.contains(DocumentPermission.BOTH)
                 || permissions.contains(DocumentPermission.OWNER);
     }
 }
