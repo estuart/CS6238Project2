@@ -284,7 +284,7 @@ public class DocumentService {
         LOG.info("Checking if user \"{}\" has proper permission to delete document \"{}\"",
                 currentUser.getUserName(), documentName);
 
-        if (!hasOwnerPermission(documentDao.getDocPermsForCurrentUser(documentName))) {
+        if (!hasWritePermission(documentDao.getDocPermsForCurrentUser(documentName))) {
             LOG.info("User \"{}\" must have a valid OWNER permission to delete a document", currentUser.getUserName());
             throw new UserLacksPermissionException("Only a document's owner is allowed to delete a file.");
         }
@@ -312,9 +312,5 @@ public class DocumentService {
         return permissions.contains(DocumentPermission.WRITE)
                 || permissions.contains(DocumentPermission.BOTH)
                 || permissions.contains(DocumentPermission.OWNER);
-    }
-
-    private boolean hasOwnerPermission(Set<DocumentPermission> permissions) {
-        return permissions.contains(DocumentPermission.OWNER);
     }
 }
