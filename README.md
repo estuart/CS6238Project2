@@ -1,24 +1,19 @@
 # Project 2 - S2DR
 
 ### System Requirements
-* JAVA must be installed on the system (jdk 1.8)
+* JDK 8 for the server
 
-### Build/Run
-To build and run the Java servlet, from the project root run `./gradlew appRun`. That's it!
-[The Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) will automatically download a
-project-local Gradle if you don't already have it installed on your system. The servlet is now accessible from
-`http://localhost:8080/`
+### Build/Run Server
+The S2DR-Server is built as a Java servlet, and is run on a Tomcat 8 servlet container. The servlet container itself
+is run _inside_ the [Gretty Plugin](https://akhikhl.github.io/gretty-doc/Feature-overview.html) for Gradle.
+Additionally, we take advantage of the [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html)
+(a Gradle instance that is contained within the project). What this means is that the server can be run without
+installing anything on the host machine except a valid JDK (JDK 8 for our project). To run the server, simply run (from
+the project root directory):
+* `./gradlew appRun`
 
-### Run Test Case Files
+The S2DR-Server will then be accessible at `https://localhost:8443`. The server can be stopped with `ctrl+C`.
+
+### Build/Run Client
 **TODO:** once we start making test files/scripts, we will need to update this to include instruction on how to run.
 
-### Libraries Used
-* [Jersey](https://jersey.java.net/) for building RESTful services
-* [Jackson](http://wiki.fasterxml.com/JacksonHome) for serializing and deserializing JSON
-* [Guava](https://github.com/google/guava/wiki) for general Java programming
-* [slf4j](http://www.slf4j.org/) for logging. TODO enable loggin
-* [Guice](https://github.com/google/guice/wiki/Motivation) for dependency injection and servlet configuration. This
-*should* be fairly invisible for 99% of the development
-* [JDBC](https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html) for database interaction
-
-###Making Change to test Jenkins
