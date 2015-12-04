@@ -1,6 +1,7 @@
 package com.cs6238.project2.s2dr.server.app;
 
 import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
+import com.cs6238.project2.s2dr.server.app.exceptions.DocumentIntegrityVerificationException;
 import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UserLacksPermissionException;
@@ -20,6 +21,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.spec.RSAPublicKeySpec;
 import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.Optional;
@@ -44,11 +47,15 @@ public class DocumentService {
         this.encryptionService = encryptionService;
     }
 
-    public void uploadDocument(File document, String documentName, Set<SecurityFlag> securityFlags)
+    public void uploadDocument(File document,
+                               String documentName,
+                               Set<SecurityFlag> securityFlags,
+                               InputStream signature)
             throws SQLException, FileNotFoundException, UnexpectedQueryResultsException, UserLacksPermissionException {
 
         ByteSource documentContents;
         Optional<byte[]> encryptionKey;
+        Optional<byte[]> documentSignature;
 
         if (securityFlags.contains(SecurityFlag.CONFIDENTIALITY)) {
 
@@ -80,12 +87,18 @@ public class DocumentService {
             encryptionKey = Optional.empty();
         }
 
+        if (securityFlags.contains(SecurityFlag.INTEGRITY)) {
+            documentSignature = Optional.of(ByteSource.Util.bytes(signature).getBytes());
+        } else {
+            documentSignature = Optional.empty();
+        }
+
         LOG.info("Checking if document \"{}\" already exists", documentName);
         if (!documentDao.documentExists(documentName)) {
 
             // the document does not already exist, so we add a new document
             LOG.info("Uploading new document \"{}\"", documentName);
-            documentDao.uploadDocument(documentName, documentContents, encryptionKey);
+            documentDao.uploadDocument(documentName, documentContents, encryptionKey, documentSignature);
 
         } else {
             LOG.info("Document \"{}\" already exists", documentName);
@@ -108,7 +121,7 @@ public class DocumentService {
 
             // since the exception wasn't thrown above, the user has permission to WRITE
             LOG.info("Overwriting document");
-            documentDao.overwriteDocument(documentName, documentContents, encryptionKey);
+            documentDao.overwriteDocument(documentName, documentContents, encryptionKey, documentSignature);
 
             // clear out the existing security options for the document. They will be re-set with the new
             // values below
@@ -132,7 +145,11 @@ public class DocumentService {
     }
 
     public DocumentDownload downloadDocument(String documentName) throws
-            SQLException, DocumentNotFoundException, UnexpectedQueryResultsException, UserLacksPermissionException {
+            SQLException,
+            DocumentNotFoundException,
+            UnexpectedQueryResultsException,
+            UserLacksPermissionException,
+            DocumentIntegrityVerificationException {
 
         LOG.info("Checking if user \"{}\" has proper permission to check-out document \"{}\"",
                 currentUser.getUserName(), documentName);
@@ -143,13 +160,14 @@ public class DocumentService {
             throw new UserLacksPermissionException("You must have the correct permission before checking-out a file");
         }
 
-        LOG.info("User \"{}\" checking-out document \"{}\"", currentUser.getUserName(), documentName);
         DocumentDownload unalteredDownload = documentDao.downloadDocument(documentName);
 
         // see if any security settings were configured for the document
         LOG.info("Checking if any security flags are configured for \"{}\"", documentName);
         EnumSet<SecurityFlag> documentSecurity = documentDao.getDocumentSecurity(documentName);
         LOG.info("Found security flags {}", documentSecurity);
+
+        DocumentDownload returnValue; // where the eventual document return value will be held
 
         if (documentSecurity.contains(SecurityFlag.CONFIDENTIALITY)) {
 
@@ -165,14 +183,46 @@ public class DocumentService {
             LOG.info("CONFIDENTIALITY was chosen for file \"{}\". Decrypting document before check-out", documentName);
             ByteSource decryptedDocument = encryptionService.decryptDocument(document);
 
-            return DocumentDownload.builder()
+            returnValue = DocumentDownload.builder()
                     .setDocumentName(unalteredDownload.getDocumentName())
+                    .setUploadUserName(unalteredDownload.getUploadUserName())
                     .setContents(new ByteArrayInputStream(decryptedDocument.getBytes()))
+                    // no need to set encryptionKey at this point
+                    .setSignature(unalteredDownload.getSignature())
                     .build();
+        } else {
+
+            // since CONFIDENTIALITY was not chosen, we return the unaltered document
+            returnValue = unalteredDownload;
         }
 
-        // since CONFIDENTIALITY was not chosen, we return the unaltered document
-        return unalteredDownload;
+        if (documentSecurity.contains(SecurityFlag.INTEGRITY)) {
+
+            LOG.info("INTEGRITY was chosen for file \"{}\". Will verify document using public key of uploader",
+                    documentName);
+
+            LOG.info("Fetching public key of document uploader \"{}\"", returnValue.getUploadUserName());
+            RSAPublicKeySpec uploaderKeySpec
+                    = documentDao.getUserPubKeySpec(returnValue.getUploadUserName());
+
+            ByteSource contentsToVerify = ByteSource.Util.bytes(returnValue.getContents());
+
+            // `getSignature().get()` will throw a runtime exception if the signature is not present, but it should
+            // *always* be present if the INTEGRITY flag is set, therefore we will let it explode
+            ByteSource documentSignature = ByteSource.Util.bytes(returnValue.getSignature().get());
+
+            if (!encryptionService.canVerifySignature(contentsToVerify, documentSignature, uploaderKeySpec)) {
+                LOG.info("Could not verify the document's signature");
+                throw new DocumentIntegrityVerificationException();
+            }
+
+            LOG.info("Successfully verified the signature");
+        }
+
+        // if the signature needed to be verified and could not, an exception would have been thrown above.
+        // at this point we can confidently return the valid document
+        LOG.info("User \"{}\" checking-out document \"{}\"", currentUser.getUserName(), documentName);
+        return returnValue;
     }
 
     public void delegatePermissions(String documentName, DelegatePermissionParams delegateParams)

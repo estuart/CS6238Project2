@@ -45,7 +45,7 @@ public class UserAuthRealm extends AuthorizingRealm {
                     "Unable to authenticate the user based on the given username/password combo", e);
         }
 
-        LOG.info("Successfully authenticated {}", user);
+        LOG.info("Successfully authenticated {}", user.getUserName());
 
         CurrentUser currentUser = GuiceServletConfig.injector.getInstance(CurrentUser.class);
         currentUser.setCurrentUser(user);

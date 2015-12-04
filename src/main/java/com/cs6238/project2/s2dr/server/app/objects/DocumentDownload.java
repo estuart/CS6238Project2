@@ -13,11 +13,18 @@ public class DocumentDownload {
 
     public static class Builder {
         private String documentName;
+        private String uploadUserName;
         private InputStream contents;
         private Optional<byte[]> encryptionKey = Optional.empty();
+        private Optional<byte[]> signature = Optional.empty();
 
         public Builder setDocumentName(String documentName) {
             this.documentName = documentName;
+            return this;
+        }
+
+        public Builder setUploadUserName(String uploadUserName) {
+            this.uploadUserName = uploadUserName;
             return this;
         }
 
@@ -31,11 +38,18 @@ public class DocumentDownload {
             return this;
         }
 
+        public Builder setSignature(Optional<byte[]> signature) {
+            this.signature = signature;
+            return this;
+        }
+
         public DocumentDownload build() {
             return new DocumentDownload(
                     documentName,
+                    uploadUserName,
                     contents,
-                    encryptionKey);
+                    encryptionKey,
+                    signature);
         }
     }
 
@@ -44,21 +58,31 @@ public class DocumentDownload {
     }
 
     private final String documentName;
+    private final String uploadUserName;
     private final InputStream contents;
     private final Optional<byte[]> encryptionKey;
+    private final Optional<byte[]> signature;
 
     private DocumentDownload(
             String documentName,
+            String uploadUserName,
             InputStream contents,
-            Optional<byte[]> encryptionKey) {
+            Optional<byte[]> encryptionKey,
+            Optional<byte[]> signature) {
 
         this.documentName = requireNonNull(documentName);
+        this.uploadUserName = requireNonNull(uploadUserName);
         this.contents = requireNonNull(contents);
         this.encryptionKey = encryptionKey;
+        this.signature = signature;
     }
 
     public String getDocumentName() {
         return documentName;
+    }
+
+    public String getUploadUserName() {
+        return uploadUserName;
     }
 
     public InputStream getContents() {
@@ -67,6 +91,10 @@ public class DocumentDownload {
 
     public Optional<byte[]> getEncryptionKey() {
         return encryptionKey;
+    }
+
+    public Optional<byte[]> getSignature() {
+        return signature;
     }
 
     @Override
