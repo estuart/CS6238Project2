@@ -147,6 +147,38 @@ public class RestEndpoint {
                 .build();
     }
 
+    @GET
+    @Path("/document/{documentName}/signature")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getDocumentRequest(@PathParam("documentName") String documentName)
+            throws UnexpectedQueryResultsException, SQLException {
+
+        InputStream signature;
+        try {
+            signature = documentService.getDocumentSignature(documentName);
+        } catch (UserLacksPermissionException e) {
+            // return a 401
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (DocumentNotFoundException e) {
+            // return a 404
+            return Response
+                    .status(Response.Status.NOT_FOUND)
+                    .build();
+        }
+
+        ContentDisposition contentDisposition = ContentDisposition.type("attachment")
+                .fileName(documentName)
+                .build();
+
+        return Response
+                .ok(signature)
+                .header("Content-Disposition", contentDisposition)
+                .build();
+    }
+
     @PUT
     @Path("/document/{documentName}")
     @Consumes(MediaType.APPLICATION_JSON)

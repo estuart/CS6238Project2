@@ -226,6 +226,25 @@ public class DocumentService {
         return returnValue;
     }
 
+    public InputStream getDocumentSignature(String documentName)
+            throws SQLException, UserLacksPermissionException, UnexpectedQueryResultsException, DocumentNotFoundException {
+
+        LOG.info("Checking if user \"{}\" has proper permission to view signature of \"{}\"",
+                currentUser.getUserName(), documentName);
+
+        // if the user doesn't have read permission, then we throw an exception
+        if (!hasReadPermission(documentDao.getDocPermsForCurrentUser(documentName))) {
+            LOG.info("User \"{}\" lacks READ permission for document \"{}\"", currentUser.getUserName(), documentName);
+            throw new UserLacksPermissionException(
+                    "You must have the correct permission before viewing a documents signature");
+        }
+
+        DocumentDownload download = documentDao.downloadDocument(documentName);
+
+        LOG.info("Returning the signature of the document \"{}\"", documentName);
+        return new ByteArrayInputStream(download.getSignature().get());
+    }
+
     public void delegatePermissions(String documentName, DelegatePermissionParams delegationParams)
             throws SQLException, UserLacksPermissionException, NoQueryResultsException {
 
