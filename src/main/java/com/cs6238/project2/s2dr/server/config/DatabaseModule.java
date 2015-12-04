@@ -12,6 +12,9 @@ import java.sql.SQLException;
 
 public class DatabaseModule extends AbstractModule {
 
+    // change the database url to "jdbc:h2:mem:s2dr;" and uncomment the return statement
+    // in the provider that contains the "INIT=runscript..." to use an in-memory database
+    // that is created from the `s2dr.sql` script
     private static final String DATABASE_URL = "jdbc:h2:s2dr;";
     private static final String H2_DRIVER = "org.h2.Driver";
     private static final String SQL_SCRIPT_NAME = "s2dr.sql";
