@@ -12,7 +12,7 @@ import java.sql.SQLException;
 
 public class DatabaseModule extends AbstractModule {
 
-    private static final String DATABASE_URL = "jdbc:h2:mem:s2dr;";
+    private static final String DATABASE_URL = "jdbc:h2:s2dr;";
     private static final String H2_DRIVER = "org.h2.Driver";
     private static final String SQL_SCRIPT_NAME = "s2dr.sql";
 
@@ -24,9 +24,20 @@ public class DatabaseModule extends AbstractModule {
     private Connection getDatabaseConnection() throws SQLException, ClassNotFoundException {
         Class.forName(H2_DRIVER);
 
-        // create the database to the in-memory H2 database, and run the sql script to
-        // create the schema.
-        return DriverManager.getConnection(
-                DATABASE_URL + "INIT=runscript from'classpath:/" + SQL_SCRIPT_NAME + "'");
+        // Right now, our H2 database is persisted at `${projectRoot}/s2dr.h2.db`. Changes to that file
+        // should not be committed to the repository. If for whatever reason you feel that you need to
+        // start over with your machine-local database, you should:
+        //      1.) make sure the servlet is not running
+        //      2.) delete the `${projectRoot}/s2dr.h2.db` file
+        //      3.) un-comment this return statement and comment out the one below
+        //      4.) start the servlet
+        //      5.) login (at least one interaction with the database is needed for H2 to "create" the database.
+        //              Logging in will do it.)
+        //      6.) stop the servlet
+        //      7.) comment this return statement back out and uncomment the one below
+        // This will re-create the database following the schema that is defined in the `s2dr.sql` script
+//        return DriverManager.getConnection(DATABASE_URL + "INIT=runscript from'classpath:/" + SQL_SCRIPT_NAME + "'");
+
+        return DriverManager.getConnection(DATABASE_URL);
     }
 }
