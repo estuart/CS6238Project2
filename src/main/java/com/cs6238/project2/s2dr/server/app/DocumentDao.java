@@ -385,10 +385,11 @@ public class DocumentDao {
         String query =
                 "SELECT permission\n" +
                 "  FROM s2dr.DocumentPermissions\n" +
-                " WHERE (documentName = (?))\n" +
-                "   AND (userName = (?))\n" +
-                "   AND (timeLimit IS NULL)\n" +
-                "    OR (timeLimit > (?))";
+                " WHERE documentName = (?)\n" +
+                "   AND (userName = (?)\n" +
+                "          OR userName = 'ALL')\n" +
+                "   AND (timeLimit IS NULL\n" +
+                "          OR timeLimit > (?))";
 
         LOG.debug("Query:\n{}", query);
 
