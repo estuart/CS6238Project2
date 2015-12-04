@@ -36,6 +36,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Set;
 
 @Path("s2dr")
@@ -83,14 +84,21 @@ public class RestEndpoint {
     public Response uploadDocument(
             @FormDataParam("document") File document,
             @FormDataParam("documentName") String documentName,
-            @FormDataParam("securityFlag") Set<SecurityFlag> securityFlags,
+            @FormDataParam("securityFlags") String securityFlags,
             @FormDataParam("signature") InputStream signature)
             throws SQLException, FileNotFoundException, URISyntaxException, UnexpectedQueryResultsException {
 
         LOG.info("User \'{}\" requesting to check-in document \"{}\"", currentUser.getUserName(), documentName);
 
+        String[] flags = securityFlags.split(",");
+
+        Set<SecurityFlag> securityFlagSet = new HashSet<>();
+        for (String flag: flags) {
+            securityFlagSet.add(SecurityFlag.valueOf(flag.trim().toUpperCase()));
+        }
+
         try {
-            documentService.uploadDocument(document, documentName, securityFlags, signature);
+            documentService.uploadDocument(document, documentName, securityFlagSet, signature);
         } catch (UserLacksPermissionException e) {
             // return a 401
             return Response
