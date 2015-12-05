@@ -9,7 +9,7 @@
 build/*
 
 # Package Files #
-*.jar
+#*.jar
 *.war
 
 # H2 database binaries
