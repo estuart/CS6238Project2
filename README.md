@@ -2,6 +2,7 @@
 
 ### System Requirements
 * JDK 8 for the server
+* Python 2.7 for the client test cases
 
 ### Build/Run Server
 The S2DR-Server is built as a Java servlet, and is run on a Tomcat 8 servlet container. The servlet container itself
@@ -12,7 +13,21 @@ installing anything on the host machine except a valid JDK (JDK 8 for our projec
 the project root directory):
 * `./gradlew appRun`
 
-The S2DR-Server will then be accessible at `https://localhost:8443`. The server can be stopped with `ctrl+C`.
+The S2DR-Server will then be accessible at `https://localhost:8443`. The server can be stopped with `ctrl+c`.
+
+If you would like to view sql queries in the server logs, in `${projectRoor}/src/main/resources/logback.xml`, change
+```
+<root level="info">
+    <appender-ref ref="STDOUT" />
+</root>
+```
+to
+```
+<root level="debug">
+    <appender-ref ref="STDOUT" />
+</root>
+```
+\* note this will require a servlet restart
 
 ### Build/Run Client
 **TODO:** once we start making test files/scripts, we will need to update this to include instruction on how to run.
