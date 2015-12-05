@@ -41,7 +41,8 @@ pip install requests
 You _may_ need sudo to install that. Once has successfully installed (ensure that the server is running), run the
 python test scripts (from the project root directory):
 ```
-python src/test/main.py
+cd src/test
+python main.py
 ```
 The python test script will then begin to interact with the server instance running in the Gretty plugin. You can watch
 the server and client logs to see the interaction.
