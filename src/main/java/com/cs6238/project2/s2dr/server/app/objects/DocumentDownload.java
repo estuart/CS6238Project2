@@ -14,7 +14,7 @@ public class DocumentDownload {
     public static class Builder {
         private String documentName;
         private String uploadUserName;
-        private InputStream contents;
+        private byte[] contents;
         private Optional<byte[]> encryptionKey = Optional.empty();
         private Optional<byte[]> signature = Optional.empty();
 
@@ -28,7 +28,7 @@ public class DocumentDownload {
             return this;
         }
 
-        public Builder setContents(InputStream contents) {
+        public Builder setContents(byte[] contents) {
             this.contents = contents;
             return this;
         }
@@ -59,14 +59,14 @@ public class DocumentDownload {
 
     private final String documentName;
     private final String uploadUserName;
-    private final InputStream contents;
+    private final byte[] contents;
     private final Optional<byte[]> encryptionKey;
     private final Optional<byte[]> signature;
 
     private DocumentDownload(
             String documentName,
             String uploadUserName,
-            InputStream contents,
+            byte[] contents,
             Optional<byte[]> encryptionKey,
             Optional<byte[]> signature) {
 
@@ -85,7 +85,7 @@ public class DocumentDownload {
         return uploadUserName;
     }
 
-    public InputStream getContents() {
+    public byte[] getContents() {
         return contents;
     }
 

@@ -232,7 +232,7 @@ public class DocumentDao {
             DocumentDownload download = DocumentDownload.builder()
                     .setDocumentName(rs.getString("documentName"))
                     .setUploadUserName(rs.getString("uploadUser"))
-                    .setContents(rs.getBlob("contents").getBinaryStream())
+                    .setContents(rs.getBytes("contents"))
                     .setEncryptionKey(Optional.ofNullable(rs.getBytes("encryptionKey")))
                     .setSignature(Optional.ofNullable(rs.getBytes("signature")))
                     .build();

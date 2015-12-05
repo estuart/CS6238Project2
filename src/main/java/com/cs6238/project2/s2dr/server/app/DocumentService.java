@@ -187,7 +187,7 @@ public class DocumentService {
             returnValue = DocumentDownload.builder()
                     .setDocumentName(unalteredDownload.getDocumentName())
                     .setUploadUserName(unalteredDownload.getUploadUserName())
-                    .setContents(new ByteArrayInputStream(decryptedDocument.getBytes()))
+                    .setContents(decryptedDocument.getBytes())
                     // no need to set encryptionKey at this point
                     .setSignature(unalteredDownload.getSignature())
                     .build();
