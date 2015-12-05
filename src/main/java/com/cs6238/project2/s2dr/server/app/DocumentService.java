@@ -99,6 +99,14 @@ public class DocumentService {
             LOG.info("Uploading new document \"{}\"", documentName);
             documentDao.uploadDocument(documentName, documentContents, encryptionKey, documentSignature);
 
+            // lastly, when a user uploads a new document, we add an "Owner" permission for that user.
+            LOG.info("Adding owner permission to document \"{}\" for user \"{}\"", documentName, currentUser.getUserName());
+            documentDao.delegateNewPermission(
+                    documentName,
+                    DocumentPermission.OWNER,
+                    DelegatePermissionParams.getUploaderPermissions(currentUser.getUserName()),
+                    Optional.empty());
+
         } else {
             LOG.info("Document \"{}\" already exists", documentName);
 
@@ -133,15 +141,6 @@ public class DocumentService {
             LOG.info("Adding SecurityFlag \"{}\" to document \"{}\"", securityFlag, documentName);
             documentDao.setDocumentSecurity(documentName, securityFlag);
         }
-
-        // lastly, when a user uploads a new document, we add an "Owner" permission for that user.
-        LOG.info("Adding owner permission to document \"{}\" for user \"{}\"", documentName, currentUser.getUserName());
-        documentDao.delegateNewPermission(
-                documentName,
-                DocumentPermission.OWNER,
-                DelegatePermissionParams.getUploaderPermissions(currentUser.getUserName()),
-                Optional.empty());
-
     }
 
     public DocumentDownload downloadDocument(String documentName) throws
@@ -231,7 +230,7 @@ public class DocumentService {
             throws SQLException, UserLacksPermissionException, UnexpectedQueryResultsException {
 
         DocumentDownload download = documentDao.downloadDocument(documentName);
-        
+
         LOG.info("Checking if user \"{}\" has proper permission to view signature of \"{}\"",
                 currentUser.getUserName(), documentName);
 
