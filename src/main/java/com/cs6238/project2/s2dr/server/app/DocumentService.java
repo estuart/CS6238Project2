@@ -1,6 +1,5 @@
 package com.cs6238.project2.s2dr.server.app;
 
-import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.app.exceptions.DocumentIntegrityVerificationException;
 import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
@@ -147,10 +146,14 @@ public class DocumentService {
 
     public DocumentDownload downloadDocument(String documentName) throws
             SQLException,
-            DocumentNotFoundException,
             UnexpectedQueryResultsException,
             UserLacksPermissionException,
             DocumentIntegrityVerificationException {
+
+        // we actually get the document from the database before checking if the user has READ permission, because we
+        // want to catch the `NoQueryResultsException` before we throw the `UserLackPermissionException`.
+        // Otherwise we will return a 401 if a document doesn't exist (or has been deleted) instead of a 404
+        DocumentDownload unalteredDownload = documentDao.downloadDocument(documentName);
 
         LOG.info("Checking if user \"{}\" has proper permission to check-out document \"{}\"",
                 currentUser.getUserName(), documentName);
@@ -160,8 +163,6 @@ public class DocumentService {
             LOG.info("User \"{}\" lacks READ permission for document \"{}\"", currentUser.getUserName(), documentName);
             throw new UserLacksPermissionException("You must have the correct permission before checking-out a file");
         }
-
-        DocumentDownload unalteredDownload = documentDao.downloadDocument(documentName);
 
         // see if any security settings were configured for the document
         LOG.info("Checking if any security flags are configured for \"{}\"", documentName);
@@ -227,8 +228,10 @@ public class DocumentService {
     }
 
     public InputStream getDocumentSignature(String documentName)
-            throws SQLException, UserLacksPermissionException, UnexpectedQueryResultsException, DocumentNotFoundException {
+            throws SQLException, UserLacksPermissionException, UnexpectedQueryResultsException {
 
+        DocumentDownload download = documentDao.downloadDocument(documentName);
+        
         LOG.info("Checking if user \"{}\" has proper permission to view signature of \"{}\"",
                 currentUser.getUserName(), documentName);
 
@@ -238,8 +241,6 @@ public class DocumentService {
             throw new UserLacksPermissionException(
                     "You must have the correct permission before viewing a documents signature");
         }
-
-        DocumentDownload download = documentDao.downloadDocument(documentName);
 
         LOG.info("Returning the signature of the document \"{}\"", documentName);
         return new ByteArrayInputStream(download.getSignature().get());

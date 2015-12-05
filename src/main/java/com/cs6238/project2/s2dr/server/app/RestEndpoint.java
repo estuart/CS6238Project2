@@ -1,6 +1,5 @@
 package com.cs6238.project2.s2dr.server.app;
 
-import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.app.exceptions.DocumentIntegrityVerificationException;
 import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
@@ -126,7 +125,7 @@ public class RestEndpoint {
         DocumentDownload download;
         try {
             download = documentService.downloadDocument(documentName);
-        } catch (DocumentNotFoundException e) {
+        } catch (NoQueryResultsException e) {
             // return a 404
             return Response
                     .status(Response.Status.NOT_FOUND)
@@ -158,7 +157,7 @@ public class RestEndpoint {
     @GET
     @Path("/document/{documentName}/signature")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getDocumentRequest(@PathParam("documentName") String documentName)
+    public Response getDocumentSignature(@PathParam("documentName") String documentName)
             throws UnexpectedQueryResultsException, SQLException {
 
         InputStream signature;
@@ -170,7 +169,7 @@ public class RestEndpoint {
                     .status(Response.Status.UNAUTHORIZED)
                     .entity(e.getMessage())
                     .build();
-        } catch (DocumentNotFoundException e) {
+        } catch (NoQueryResultsException e) {
             // return a 404
             return Response
                     .status(Response.Status.NOT_FOUND)

@@ -1,6 +1,5 @@
 package com.cs6238.project2.s2dr.server.app;
 
-import com.cs6238.project2.s2dr.server.app.exceptions.DocumentNotFoundException;
 import com.cs6238.project2.s2dr.server.app.exceptions.NoQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.TooManyQueryResultsException;
 import com.cs6238.project2.s2dr.server.app.exceptions.UnexpectedQueryResultsException;
@@ -204,7 +203,8 @@ public class DocumentDao {
     }
 
     public DocumentDownload downloadDocument(String documentName)
-            throws SQLException, DocumentNotFoundException, UnexpectedQueryResultsException {
+            throws SQLException, UnexpectedQueryResultsException {
+
         String query =
                 "SELECT documentName,\n" +
                 "       uploadUser,\n" +
@@ -226,7 +226,7 @@ public class DocumentDao {
 
             if (!rs.next()) {
                 // no documents matched the given document name
-                throw new DocumentNotFoundException();
+                throw new NoQueryResultsException("There are no documents stored by the given name");
             }
 
             DocumentDownload download = DocumentDownload.builder()
